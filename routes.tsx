@@ -174,7 +174,7 @@ const HRModule = lazy(() => import("./components/modules/HRModule"));
 const ProfessionalLeaveManagement = lazy(() => import("./components/hr/ProfessionalLeaveManagement"));
 const StatutoryFormsOnboarding = lazy(() => import("./components/hr/StatutoryFormsOnboarding"));
 const TravelReimbursementModule = lazy(() => import("./components/travel/TravelReimbursementModule"));
-import CreateSalaryStructure from "./components/payroll/CreateSalaryStructure";
+const CreateSalaryStructure = lazy(() => import("./components/payroll/CreateSalaryStructure"));
 const ChartOfAccounts = lazy(() => import("./components/finance/ChartOfAccounts"));
 const AdminPlanManagement = lazy(() => import("./components/subscription/AdminPlanManagement"));
 const IncentiveConfiguration = lazy(() => import("./components/incentives/IncentiveConfiguration"));
@@ -203,27 +203,27 @@ import { OnboardingRedirect } from "./components/onboarding/OnboardingRedirect";
 import { DevOnlyRoute } from "./components/guards/DevOnlyRoute";
 import { Dashboard } from "./components/Dashboard";
 
-import { CRMConversionAnalyticsDashboard } from "./components/modules/CRMConversionAnalyticsDashboard";
+const CRMConversionAnalyticsDashboard = lazy(() => import("./components/modules/CRMConversionAnalyticsDashboard").then(m => ({ default: m.CRMConversionAnalyticsDashboard })));
 
 const FinanceModule = lazy(() => import("./components/modules/FinanceModule").then(m => ({ default: m.FinanceModule })));
 // import { ChartOfAccounts } from "./components/finance/ChartOfAccounts"; // NOW LAZY
 
-import { FinanceAnalyticsDashboard } from "./components/finance/FinanceAnalyticsDashboard";
+const FinanceAnalyticsDashboard = lazy(() => import("./components/finance/FinanceAnalyticsDashboard").then(m => ({ default: m.FinanceAnalyticsDashboard })));
 
-import InvoiceManagement from "./components/finance/InvoiceManagement";
-import InvoiceDetail from "./components/finance/InvoiceDetail";
-import PaymentManagement from "./components/finance/PaymentManagement";
+const InvoiceManagement = lazy(() => import("./components/finance/InvoiceManagement"));
+const InvoiceDetail = lazy(() => import("./components/finance/InvoiceDetail"));
+const PaymentManagement = lazy(() => import("./components/finance/PaymentManagement"));
 // import { HRModule } from "./components/modules/HRModule"; // NOW LAZY
 // import { ProfessionalLeaveManagement } from "./components/hr/ProfessionalLeaveManagement"; // NOW LAZY
 
 // import { StatutoryFormsOnboarding } from "./components/hr/StatutoryFormsOnboarding"; // NOW LAZY
 
-import { SystemAuditDashboard } from "./components/audit/SystemAuditDashboard";
+const SystemAuditDashboard = lazy(() => import("./components/audit/SystemAuditDashboard").then(m => ({ default: m.SystemAuditDashboard })));
 
-import { GSTDashboard } from "./components/accounts/GSTDashboard";
+const GSTDashboard = lazy(() => import("./components/accounts/GSTDashboard").then(m => ({ default: m.GSTDashboard })));
 // Phase 1 Accounting Entry System
 
-import { AccountsDashboard } from "./components/accounts/AccountsDashboard";
+const AccountsDashboard = lazy(() => import("./components/accounts/AccountsDashboard").then(m => ({ default: m.AccountsDashboard })));
 
 const TDSPayableModule = lazy(() => import("./components/accounts/TDSPayableModule"));
 const AdvanceTaxCalculator = lazy(() => import("./components/accounts/AdvanceTaxCalculator"));
@@ -235,14 +235,14 @@ const PayablesDashboard = lazy(() => import("./components/accounts/PayablesDashb
 // import { CustomerLTVAnalysis } from "./components/analytics/CustomerLTVAnalysis"; // NOW LAZY
 // import { CACDashboard } from "./components/analytics/CACDashboard"; // NOW LAZY
 // import { BreakEvenAnalysis } from "./components/analytics/BreakEvenAnalysis"; // NOW LAZY
-import { AnalyticsDashboardWithDrillDown } from "./components/dashboards/AnalyticsDashboardWithDrillDown";
+const AnalyticsDashboardWithDrillDown = lazy(() => import("./components/dashboards/AnalyticsDashboardWithDrillDown").then(m => ({ default: m.AnalyticsDashboardWithDrillDown })));
 // import { CostPerWashCalculatorEnhanced } from "./components/analytics/CostPerWashCalculatorEnhanced"; // NOW LAZY
 // import { CostPerWashByPlan } from "./components/analytics/CostPerWashByPlan"; // NOW LAZY
 // import { CostPerWashByConsumption } from "./components/analytics/CostPerWashByConsumption"; // NOW LAZY
 // import { LabourCostPerWash } from "./components/analytics/LabourCostPerWash"; // NOW LAZY
 // import { EmployeeEfficiency } from "./components/analytics/EmployeeEfficiency"; // NOW LAZY
 // import { CityComparison } from "./components/analytics/CityComparison"; // NOW LAZY
-import { RoleBasedAnalyticsDashboard } from "./components/examples/RoleBasedAnalyticsDashboard";
+const RoleBasedAnalyticsDashboard = lazy(() => import("./components/examples/RoleBasedAnalyticsDashboard").then(m => ({ default: m.RoleBasedAnalyticsDashboard })));
 
 // Founder module imports - NOW LAZY
 // import { FounderControlTower } from "./components/founder/FounderControlTower"; // NOW LAZY
@@ -253,28 +253,27 @@ import { RoleBasedAnalyticsDashboard } from "./components/examples/RoleBasedAnal
 // import { CreateSalaryStructure } from "./components/payroll/CreateSalaryStructure"; // NOW LAZY
 const PayrollRun = lazy(() => import("./components/payroll/PayrollRun").then(m => ({ default: m.PayrollRun })));
 
-import { ClothAdminDashboard } from "./components/cloth-tracking/ClothAdminDashboard";
+const ClothAdminDashboard = lazy(() => import("./components/cloth-tracking/ClothAdminDashboard").then(m => ({ default: m.ClothAdminDashboard })));
 
-import { EmployeeAdvanceDashboard } from "./components/advance/EmployeeAdvanceDashboard";
+const EmployeeAdvanceDashboard = lazy(() => import("./components/advance/EmployeeAdvanceDashboard").then(m => ({ default: m.EmployeeAdvanceDashboard })));
 
 // R2 FIX: test-btl-service file may not exist — converted to lazy with error boundary
-import TestBTLService from "./test-btl-service";
 
 // import { AdminPlanManagement } from "./components/subscription/AdminPlanManagement"; // NOW LAZY
 
-import { HierarchyDashboard } from "./components/hierarchy/HierarchyDashboard";
+const HierarchyDashboard = lazy(() => import("./components/hierarchy/HierarchyDashboard").then(m => ({ default: m.HierarchyDashboard })));
 
 // import { IncentiveConfiguration } from "./components/incentives/IncentiveConfiguration"; // NOW LAZY
 
-import { IncentiveDashboard } from "./components/incentives/IncentiveDashboard";
+const IncentiveDashboard = lazy(() => import("./components/incentives/IncentiveDashboard").then(m => ({ default: m.IncentiveDashboard })));
 
-import { ShiftManagementPage } from "./components/admin/ShiftManagementPage"; // MC-10
-import { AttendanceFraudAlertsPage } from "./components/admin/AttendanceFraudAlertsPage"; // MC-09
-import { PermissionManagementPage } from "./components/admin/PermissionManagementPage"; // MC-11
-import { RolePermissionManager } from "./components/admin/RolePermissionManager"; // MC-11 Enhanced
-import { IncentiveVisibilityAdmin } from "./components/admin/IncentiveVisibilityAdmin"; // Super Admin incentive screen control
-import { RoleSuggestionsPage } from "./components/hr/RoleSuggestionsPage"; // MC-12
-import { HRIntelligenceDashboard } from "./components/hr/HRIntelligenceDashboard";
+const ShiftManagementPage = lazy(() => import("./components/admin/ShiftManagementPage").then(m => ({ default: m.ShiftManagementPage })));
+const AttendanceFraudAlertsPage = lazy(() => import("./components/admin/AttendanceFraudAlertsPage").then(m => ({ default: m.AttendanceFraudAlertsPage })));
+const PermissionManagementPage = lazy(() => import("./components/admin/PermissionManagementPage").then(m => ({ default: m.PermissionManagementPage })));
+const RolePermissionManager = lazy(() => import("./components/admin/RolePermissionManager").then(m => ({ default: m.RolePermissionManager })));
+const IncentiveVisibilityAdmin = lazy(() => import("./components/admin/IncentiveVisibilityAdmin").then(m => ({ default: m.IncentiveVisibilityAdmin })));
+const RoleSuggestionsPage = lazy(() => import("./components/hr/RoleSuggestionsPage").then(m => ({ default: m.RoleSuggestionsPage })));
+const HRIntelligenceDashboard = lazy(() => import("./components/hr/HRIntelligenceDashboard").then(m => ({ default: m.HRIntelligenceDashboard })));
 
 import { UnauthorizedPage } from "./components/pages/UnauthorizedPage";
 import { LoginPage } from "./pages/LoginPage";
