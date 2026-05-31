@@ -5,197 +5,210 @@ import { GlobalFiltersProvider } from "./components/navigation/GlobalFilterBar";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { RootLayoutWrapper } from "./components/layouts/RootLayoutWrapper";
 
-const AccountingEntry = lazy(() => import("./components/accounts/AccountingEntry").then(m => ({ default: m.AccountingEntry })));
-const AccountingTransactionList = lazy(() => import("./components/accounts/AccountingTransactionList").then(m => ({ default: m.AccountingTransactionList })));
-const AccountsLedger = lazy(() => import("./components/accounts/AccountsLedger").then(m => ({ default: m.AccountsLedger })));
-const AccountsModule = lazy(() => import("./components/modules/AccountsModule").then(m => ({ default: m.AccountsModule })));
-const AccountsPayrollProcessing = lazy(() => import("./components/accounts/AccountsPayrollProcessing").then(m => ({ default: m.AccountsPayrollProcessing })));
-const ActivityTimelineWrapper = lazy(() => import("./components/crm/ActivityTimelineWrapper").then(m => ({ default: m.ActivityTimelineWrapper })));
-const ActualCostInputs = lazy(() => import("./components/finance/ActualCostInputs").then(m => ({ default: m.ActualCostInputs })));
-const AdjustmentsReport = lazy(() => import("./components/advance/AdjustmentsReport").then(m => ({ default: m.AdjustmentsReport })));
-const AdvanceDetailView = lazy(() => import("./components/advance/AdvanceDetailView").then(m => ({ default: m.AdvanceDetailView })));
-const AdvanceTypeSelection = lazy(() => import("./components/advance/AdvanceTypeSelection").then(m => ({ default: m.AdvanceTypeSelection })));
-const ApprovalCenter = lazy(() => import("./components/ApprovalCenter").then(m => ({ default: m.ApprovalCenter })));
-const ApprovalCenterHR = lazy(() => import("./components/hr/ApprovalCenter").then(m => ({ default: m.ApprovalCenter })));
-const AttendanceDataManager = lazy(() => import("./components/admin/AttendanceDataManager").then(m => ({ default: m.AttendanceDataManager })));
-const AuditTrail = lazy(() => import("./components/AuditTrail").then(m => ({ default: m.AuditTrail })));
-const BalanceSheet = lazy(() => import("./components/accounts/BalanceSheet").then(m => ({ default: m.BalanceSheet })));
-const BusinessFlowDemo = lazy(() => import("./components/BusinessFlowDemo").then(m => ({ default: m.BusinessFlowDemo })));
-const BusinessRulesPage = lazy(() => import("./components/admin/BusinessRulesPage").then(m => ({ default: m.BusinessRulesPage })));
-const CRMLeadManagementWithFilters = lazy(() => import("./components/modules/CRMLeadManagementWithFilters").then(m => ({ default: m.CRMLeadManagementWithFilters })));
-const CityManagement = lazy(() => import("./components/admin/CityManagement").then(m => ({ default: m.CityManagement })));
-const CityManagerApp = lazy(() => import("./components/city/CityManagerApp").then(m => ({ default: m.CityManagerApp })));
-const ClientPortal = lazy(() => import("./components/client/ClientPortal").then(m => ({ default: m.ClientPortal })));
-const ClothExchange = lazy(() => import("./components/cloth-tracking/ClothExchange").then(m => ({ default: m.ClothExchange })));
-const ClusterManagerApp = lazy(() => import("./components/cm/ClusterManagerApp").then(m => ({ default: m.ClusterManagerApp })));
-const CommunicationTemplates = lazy(() => import("./components/settings/CommunicationTemplates").then(m => ({ default: m.CommunicationTemplates })));
-const ComplaintManagement = lazy(() => import("./components/modules/ComplaintManagement").then(m => ({ default: m.ComplaintManagement })));
-const CostConfiguration = lazy(() => import("./components/settings/CostConfiguration").then(m => ({ default: m.CostConfiguration })));
-const CostPerWashModule = lazy(() => import("./components/finance/CostPerWashModule").then(m => ({ default: m.CostPerWashModule })));
-const CostPerWashReport = lazy(() => import("./components/reports/CostPerWashReport").then(m => ({ default: m.CostPerWashReport })));
-const CostTrackingIntegrationDemo = lazy(() => import("./components/demo/CostTrackingIntegrationDemo").then(m => ({ default: m.CostTrackingIntegrationDemo })));
-const CustomerCareExecutiveApp = lazy(() => import("./components/cce/CustomerCareExecutiveApp").then(m => ({ default: m.CustomerCareExecutiveApp })));
-const CustomerPlanPage = lazy(() => import("./components/subscription/CustomerPlanPage").then(m => ({ default: m.CustomerPlanPage })));
-const CustomerSubscription = lazy(() => import("./components/modules/CustomerSubscription").then(m => ({ default: m.CustomerSubscription })));
-const DesignSystemTest = lazy(() => import("./design-system/tests/DesignSystemTest").then(m => ({ default: m.DesignSystemTest })));
-const DeveloperRouteDirectory = lazy(() => import("./components/developer/DeveloperRouteDirectory").then(m => ({ default: m.DeveloperRouteDirectory })));
-const EmployeeLedger = lazy(() => import("./components/hr/EmployeeLedger").then(m => ({ default: m.EmployeeLedger })));
-const EmployeeLifecycleManagement = lazy(() => import("./components/hr/EmployeeLifecycleManagement").then(m => ({ default: m.EmployeeLifecycleManagement })));
-const EmployeeOnboarding = lazy(() => import("./components/hr/EmployeeOnboarding").then(m => ({ default: m.EmployeeOnboarding })));
-const EmployeeSalaryAssignment = lazy(() => import("./components/payroll/EmployeeSalaryAssignment").then(m => ({ default: m.EmployeeSalaryAssignment })));
-const EmployeeSelfService = lazy(() => import("./components/hr/EmployeeSelfService").then(m => ({ default: m.EmployeeSelfService })));
-const ExitFFSettlement = lazy(() => import("./components/hr/ExitFFSettlement").then(m => ({ default: m.ExitFFSettlement })));
-const ExpansionOpportunities = lazy(() => import("./components/modules/ExpansionOpportunities").then(m => ({ default: m.ExpansionOpportunities })));
-const ExpenseAnalytics = lazy(() => import("./components/accounts/ExpenseAnalytics").then(m => ({ default: m.ExpenseAnalytics })));
-const ExpenseEntry = lazy(() => import("./components/accounts/ExpenseEntry").then(m => ({ default: m.ExpenseEntry })));
-const ExpenseVoucher = lazy(() => import("./components/accounts/ExpenseVoucher").then(m => ({ default: m.ExpenseVoucher })));
-const FinanceTransactions = lazy(() => import("./components/finance/FinanceTransactions").then(m => ({ default: m.FinanceTransactions })));
-const FinancialReportsModule = lazy(() => import("./components/finance/FinancialReportsModule").then(m => ({ default: m.FinancialReportsModule })));
-const GRNEntry = lazy(() => import("./components/store-manager/GRNEntry").then(m => ({ default: m.GRNEntry })));
-const GSTCustomerMaster = lazy(() => import("./components/gst/GSTCustomerMaster").then(m => ({ default: m.GSTCustomerMaster })));
-const GSTFilingModule = lazy(() => import("./components/gst/GSTFilingModule").then(m => ({ default: m.GSTFilingModule })));
-const GSTManagerReview = lazy(() => import("./components/gst/GSTManagerReview").then(m => ({ default: m.GSTManagerReview })));
-const GSTMonitoringModule = lazy(() => import("./components/gst/GSTMonitoringModule").then(m => ({ default: m.GSTMonitoringModule })));
-const GSTOverview = lazy(() => import("./components/gst/GSTOverview").then(m => ({ default: m.GSTOverview })));
-const GSTR1Module = lazy(() => import("./components/gst/GSTR1Module").then(m => ({ default: m.GSTR1Module })));
-const GSTR2AReport = lazy(() => import("./components/accounts/GSTR2AReport").then(m => ({ default: m.GSTR2AReport })));
-const GSTR3BModule = lazy(() => import("./components/gst/GSTR3BModule").then(m => ({ default: m.GSTR3BModule })));
-const GSTReconciliation = lazy(() => import("./components/gst/GSTReconciliation").then(m => ({ default: m.GSTReconciliation })));
-const GSTReports = lazy(() => import("./components/gst/GSTReports").then(m => ({ default: m.GSTReports })));
-const GSTTransactionEntry = lazy(() => import("./components/gst/GSTTransactionEntry").then(m => ({ default: m.GSTTransactionEntry })));
-const GSTValidationCentre = lazy(() => import("./components/gst/GSTValidationCentre").then(m => ({ default: m.GSTValidationCentre })));
-const GSTVendorMaster = lazy(() => import("./components/gst/GSTVendorMaster").then(m => ({ default: m.GSTVendorMaster })));
-const HRAdvanceManagement = lazy(() => import("./components/advance/HRAdvanceManagement").then(m => ({ default: m.HRAdvanceManagement })));
-const HRPayrollApproval = lazy(() => import("./components/hr/HRPayrollApproval").then(m => ({ default: m.HRPayrollApproval })));
-const HolidayManagement = lazy(() => import("./components/hr/HolidayManagement").then(m => ({ default: m.HolidayManagement })));
-const IDCardGenerator = lazy(() => import("./components/hr/IDCardGenerator").then(m => ({ default: m.IDCardGenerator })));
-const IncentiveEngineDemo = lazy(() => import("./components/workflow/IncentiveEngineDemo").then(m => ({ default: m.IncentiveEngineDemo })));
-const IncentiveSimulator = lazy(() => import("./components/incentives/IncentiveSimulator").then(m => ({ default: m.IncentiveSimulator })));
-const InventoryMonitoring = lazy(() => import("./components/store-manager/InventoryMonitoring").then(m => ({ default: m.InventoryMonitoring })));
-const InventoryStore = lazy(() => import("./components/modules/InventoryStore").then(m => ({ default: m.InventoryStore })));
-const ItemMaster = lazy(() => import("./components/accounts/ItemMaster").then(m => ({ default: m.ItemMaster })));
-const JournalEntry = lazy(() => import("./components/accounts/JournalEntry").then(m => ({ default: m.JournalEntry })));
-const LeavePolicyEngine = lazy(() => import("./components/hr/LeavePolicyEngine").then(m => ({ default: m.LeavePolicyEngine })));
-const LedgerEntriesView = lazy(() => import("./components/finance/LedgerEntriesView").then(m => ({ default: m.LedgerEntriesView })));
-const LedgerMaster = lazy(() => import("./components/accounts/LedgerMaster").then(m => ({ default: m.LedgerMaster })));
-const LettersDocuments = lazy(() => import("./components/hr/LettersDocuments").then(m => ({ default: m.LettersDocuments })));
-const LifeCycleReports = lazy(() => import("./components/hr/LifeCycleReports").then(m => ({ default: m.LifeCycleReports })));
-const LongTermAdvanceForm = lazy(() => import("./components/advance/LongTermAdvanceForm").then(m => ({ default: m.LongTermAdvanceForm })));
-const MOQManagement = lazy(() => import("./components/store-manager/MOQManagement").then(m => ({ default: m.MOQManagement })));
-const MaterialRequisition = lazy(() => import("./components/inventory/MaterialRequisition").then(m => ({ default: m.MaterialRequisition })));
-const MobileChangeRequest = lazy(() => import("./components/hr/MobileChangeRequest").then(m => ({ default: m.MobileChangeRequest })));
-const MonthEndVerification = lazy(() => import("./components/inventory/MonthEndVerification").then(m => ({ default: m.MonthEndVerification })));
-const MyAccountPage = lazy(() => import("./components/hr/MyAccountPage").then(m => ({ default: m.MyAccountPage })));
-const MyStock = lazy(() => import("./components/washer/MyStock").then(m => ({ default: m.MyStock })));
-const NotificationCenter = lazy(() => import("./components/crm/NotificationCenter").then(m => ({ default: m.NotificationCenter })));
-const OnboardingAutomation = lazy(() => import("./components/hr/OnboardingAutomation").then(m => ({ default: m.OnboardingAutomation })));
-const OperationsDataCapture = lazy(() => import("./components/operations/OperationsDataCapture").then(m => ({ default: m.OperationsDataCapture })));
-const OperationsLayout = lazy(() => import("./components/operations/OperationsLayout").then(m => ({ default: m.OperationsLayout })));
-const OperationsManagerApp = lazy(() => import("./components/om/OperationsManagerApp").then(m => ({ default: m.OperationsManagerApp })));
-const OperationsRouter = lazy(() => import("./components/operations/OperationsRouter").then(m => ({ default: m.OperationsRouter })));
-const OtherDeductionsModule = lazy(() => import("./components/advance/OtherDeductionsModule").then(m => ({ default: m.OtherDeductionsModule })));
-const OtherEarningsModule = lazy(() => import("./components/advance/OtherEarningsModule").then(m => ({ default: m.OtherEarningsModule })));
-const PackageCostMatrix = lazy(() => import("./components/finance/PackageCostMatrix").then(m => ({ default: m.PackageCostMatrix })));
-const PartyLedger = lazy(() => import("./components/accounts/PartyLedger").then(m => ({ default: m.PartyLedger })));
-const PayrollConfigTest = lazy(() => import("./components/payroll/PayrollConfigTest").then(m => ({ default: m.PayrollConfigTest })));
-const PayrollConfiguration = lazy(() => import("./components/payroll/PayrollConfiguration").then(m => ({ default: m.PayrollConfiguration })));
-const PayrollProcessing = lazy(() => import("./components/payroll/PayrollProcessing").then(m => ({ default: m.PayrollProcessing })));
-const PayrollProcessingAdvanced = lazy(() => import("./components/payroll/PayrollProcessingAdvanced").then(m => ({ default: m.PayrollProcessingAdvanced })));
-const PayrollReviewApproval = lazy(() => import("./components/payroll/PayrollReviewApproval").then(m => ({ default: m.PayrollReviewApproval })));
-const PerformanceTracking = lazy(() => import("./components/performance/PerformanceTracking").then(m => ({ default: m.PerformanceTracking })));
-const PlanEditor = lazy(() => import("./components/subscription/PlanEditor").then(m => ({ default: m.PlanEditor })));
-const PlanSelectionScreen = lazy(() => import("./components/subscription/PlanSelectionScreen").then(m => ({ default: m.PlanSelectionScreen })));
-const ProcurementModule = lazy(() => import("./components/modules/ProcurementModule").then(m => ({ default: m.ProcurementModule })));
-const PurchaseOrderCreation = lazy(() => import("./components/store-manager/PurchaseOrderCreation").then(m => ({ default: m.PurchaseOrderCreation })));
-const PurchaseSummaryReport = lazy(() => import("./components/accounts/PurchaseSummaryReport").then(m => ({ default: m.PurchaseSummaryReport })));
-const RCMReport = lazy(() => import("./components/accounts/RCMReport").then(m => ({ default: m.RCMReport })));
-const RazorpayFlow = lazy(() => import("./components/accounts/RazorpayFlow").then(m => ({ default: m.RazorpayFlow })));
-const RevenueCaptureSystem = lazy(() => import("./components/finance/RevenueCaptureSystem").then(m => ({ default: m.RevenueCaptureSystem })));
-const SalaryPayableView = lazy(() => import("./components/payroll/SalaryPayableView").then(m => ({ default: m.SalaryPayableView })));
-const SalaryPaymentScreen = lazy(() => import("./components/payroll/SalaryPaymentScreen").then(m => ({ default: m.SalaryPaymentScreen })));
-const SalesHeadApp = lazy(() => import("./components/sh/SalesHeadApp").then(m => ({ default: m.SalesHeadApp })));
-const SalesManagerApp = lazy(() => import("./components/sm/SalesManagerApp").then(m => ({ default: m.SalesManagerApp })));
-const SalesSummaryReport = lazy(() => import("./components/accounts/SalesSummaryReport").then(m => ({ default: m.SalesSummaryReport })));
-const ServiceZonesManagement = lazy(() => import("./components/modules/ServiceZonesManagement").then(m => ({ default: m.ServiceZonesManagement })));
-const ShortTermAdvanceForm = lazy(() => import("./components/advance/ShortTermAdvanceForm").then(m => ({ default: m.ShortTermAdvanceForm })));
-const StatutoryFormsVerification = lazy(() => import("./components/hr/StatutoryFormsVerification").then(m => ({ default: m.StatutoryFormsVerification })));
-const StatutoryPayablesScreen = lazy(() => import("./components/payroll/StatutoryPayablesScreen").then(m => ({ default: m.StatutoryPayablesScreen })));
-const StoreManagerModule = lazy(() => import("./components/modules/StoreManagerModule").then(m => ({ default: m.StoreManagerModule })));
-const StoreModule = lazy(() => import("./components/modules/StoreModule").then(m => ({ default: m.StoreModule })));
-const SubscriptionApp = lazy(() => import("./components/subscription/SubscriptionApp").then(m => ({ default: m.SubscriptionApp })));
-const SubscriptionDiagnostics = lazy(() => import("./components/subscription/SubscriptionDiagnostics").then(m => ({ default: m.SubscriptionDiagnostics })));
-const SuperAdminPayrollApproval = lazy(() => import("./components/admin/SuperAdminPayrollApproval").then(m => ({ default: m.SuperAdminPayrollApproval })));
-const SuperAdminPlanEditor = lazy(() => import("./components/admin/SuperAdminPlanEditor").then(m => ({ default: m.SuperAdminPlanEditor })));
-const SupervisorAppConnected = lazy(() => import("./components/supervisor/SupervisorAppConnected").then(m => ({ default: m.SupervisorAppConnected })));
-const SupervisorLayout = lazy(() => import("./components/supervisor/SupervisorLayout").then(m => ({ default: m.SupervisorLayout })));
-const SupervisorModuleUpdated = lazy(() => import("./components/modules/SupervisorModuleUpdated").then(m => ({ default: m.SupervisorModuleUpdated })));
-const SupplierDetail = lazy(() => import("./components/procurement/SupplierDetail").then(m => ({ default: m.SupplierDetail })));
-const SystemIntegrationDemo = lazy(() => import("./components/washer/SystemIntegrationDemo").then(m => ({ default: m.SystemIntegrationDemo })));
-const TSEDiagnostics = lazy(() => import("./components/tse/TSEDiagnostics").then(m => ({ default: m.TSEDiagnostics })));
-const TeleSalesExecutiveApp = lazy(() => import("./components/tse/TeleSalesExecutiveApp").then(m => ({ default: m.TeleSalesExecutiveApp })));
-const TeleSalesManagerApp = lazy(() => import("./components/tsm/TeleSalesManagerApp").then(m => ({ default: m.TeleSalesManagerApp })));
-const TestStatutoryRoutes = lazy(() => import("./components/TestStatutoryRoutes").then(m => ({ default: m.TestStatutoryRoutes })));
-const TransactionSubTypeManager = lazy(() => import("./components/gst/TransactionSubTypeManager").then(m => ({ default: m.TransactionSubTypeManager })));
-const TrialBalance = lazy(() => import("./components/accounts/TrialBalance").then(m => ({ default: m.TrialBalance })));
-const UserManagement = lazy(() => import("./components/modules/UserManagement").then(m => ({ default: m.UserManagement })));
-const VendorPayment = lazy(() => import("./components/accounts/VendorPayment").then(m => ({ default: m.VendorPayment })));
-const VendorRequest = lazy(() => import("./components/store-manager/VendorRequest").then(m => ({ default: m.VendorRequest })));
-const WasherAttendanceHistory = lazy(() => import("./components/washer/WasherAttendanceHistory").then(m => ({ default: m.WasherAttendanceHistory })));
-const WasherCoreScreensConnected = lazy(() => import("./components/washer/WasherCoreScreensConnected").then(m => ({ default: m.WasherCoreScreensConnected })));
-const WasherCoreScreensDemo = lazy(() => import("./components/washer/WasherCoreScreensDemo").then(m => ({ default: m.WasherCoreScreensDemo })));
-const WasherIssuances = lazy(() => import("./components/inventory/WasherIssuances").then(m => ({ default: m.WasherIssuances })));
-const WasherJobExecution = lazy(() => import("./components/modules/WasherJobExecution").then(m => ({ default: m.WasherJobExecution })));
-const WasherStockLedger = lazy(() => import("./components/inventory/WasherStockLedger").then(m => ({ default: m.WasherStockLedger })));
-const WeekOffCoverDemo = lazy(() => import("./components/washer/WeekOffCoverDemo").then(m => ({ default: m.WeekOffCoverDemo })));
-const WorkflowControlDemo = lazy(() => import("./components/workflow/WorkflowControlDemo").then(m => ({ default: m.WorkflowControlDemo })));
-const WorkforceDiagnostic = lazy(() => import("./components/workforce/WorkforceDiagnostic").then(m => ({ default: m.WorkforceDiagnostic })));
-const WorkingHoursSetup = lazy(() => import("./components/workforce/WorkingHoursSetup").then(m => ({ default: m.WorkingHoursSetup })));
-const WorkingHoursSimple = lazy(() => import("./components/workforce/WorkingHoursSimple").then(m => ({ default: m.WorkingHoursSimple })));
-const WorkingHoursTest = lazy(() => import("./components/workforce/WorkingHoursTest").then(m => ({ default: m.WorkingHoursTest })));
+const AccountingEntry = lazy(retryLazy(() => import("./components/accounts/AccountingEntry").then(m => ({ default: m.AccountingEntry }))));
+const AccountingTransactionList = lazy(retryLazy(() => import("./components/accounts/AccountingTransactionList").then(m => ({ default: m.AccountingTransactionList }))));
+const AccountsLedger = lazy(retryLazy(() => import("./components/accounts/AccountsLedger").then(m => ({ default: m.AccountsLedger }))));
+const AccountsModule = lazy(retryLazy(() => import("./components/modules/AccountsModule").then(m => ({ default: m.AccountsModule }))));
+const AccountsPayrollProcessing = lazy(retryLazy(() => import("./components/accounts/AccountsPayrollProcessing").then(m => ({ default: m.AccountsPayrollProcessing }))));
+const ActivityTimelineWrapper = lazy(retryLazy(() => import("./components/crm/ActivityTimelineWrapper").then(m => ({ default: m.ActivityTimelineWrapper }))));
+const ActualCostInputs = lazy(retryLazy(() => import("./components/finance/ActualCostInputs").then(m => ({ default: m.ActualCostInputs }))));
+const AdjustmentsReport = lazy(retryLazy(() => import("./components/advance/AdjustmentsReport").then(m => ({ default: m.AdjustmentsReport }))));
+const AdvanceDetailView = lazy(retryLazy(() => import("./components/advance/AdvanceDetailView").then(m => ({ default: m.AdvanceDetailView }))));
+const AdvanceTypeSelection = lazy(retryLazy(() => import("./components/advance/AdvanceTypeSelection").then(m => ({ default: m.AdvanceTypeSelection }))));
+const ApprovalCenter = lazy(retryLazy(() => import("./components/ApprovalCenter").then(m => ({ default: m.ApprovalCenter }))));
+const ApprovalCenterHR = lazy(retryLazy(() => import("./components/hr/ApprovalCenter").then(m => ({ default: m.ApprovalCenter }))));
+const AttendanceDataManager = lazy(retryLazy(() => import("./components/admin/AttendanceDataManager").then(m => ({ default: m.AttendanceDataManager }))));
+const AttendanceFraudAlertsPage = lazy(retryLazy(() => import("./components/admin/AttendanceFraudAlertsPage").then(m => ({ default: m.AttendanceFraudAlertsPage }))));
+const AuditTrail = lazy(retryLazy(() => import("./components/AuditTrail").then(m => ({ default: m.AuditTrail }))));
+const BalanceSheet = lazy(retryLazy(() => import("./components/accounts/BalanceSheet").then(m => ({ default: m.BalanceSheet }))));
+const BusinessFlowDemo = lazy(retryLazy(() => import("./components/BusinessFlowDemo").then(m => ({ default: m.BusinessFlowDemo }))));
+const BusinessRulesPage = lazy(retryLazy(() => import("./components/admin/BusinessRulesPage").then(m => ({ default: m.BusinessRulesPage }))));
+const CRMLeadManagementWithFilters = lazy(retryLazy(() => import("./components/modules/CRMLeadManagementWithFilters").then(m => ({ default: m.CRMLeadManagementWithFilters }))));
+const CityManagement = lazy(retryLazy(() => import("./components/admin/CityManagement").then(m => ({ default: m.CityManagement }))));
+const CityManagerApp = lazy(retryLazy(() => import("./components/city/CityManagerApp").then(m => ({ default: m.CityManagerApp }))));
+const ClientPortal = lazy(retryLazy(() => import("./components/client/ClientPortal").then(m => ({ default: m.ClientPortal }))));
+const ClothExchange = lazy(retryLazy(() => import("./components/cloth-tracking/ClothExchange").then(m => ({ default: m.ClothExchange }))));
+const ClusterManagerApp = lazy(retryLazy(() => import("./components/cm/ClusterManagerApp").then(m => ({ default: m.ClusterManagerApp }))));
+const CommunicationTemplates = lazy(retryLazy(() => import("./components/settings/CommunicationTemplates").then(m => ({ default: m.CommunicationTemplates }))));
+const ComplaintManagement = lazy(retryLazy(() => import("./components/modules/ComplaintManagement").then(m => ({ default: m.ComplaintManagement }))));
+const CostConfiguration = lazy(retryLazy(() => import("./components/settings/CostConfiguration").then(m => ({ default: m.CostConfiguration }))));
+const CostPerWashModule = lazy(retryLazy(() => import("./components/finance/CostPerWashModule").then(m => ({ default: m.CostPerWashModule }))));
+const CostPerWashReport = lazy(retryLazy(() => import("./components/reports/CostPerWashReport").then(m => ({ default: m.CostPerWashReport }))));
+const CostTrackingIntegrationDemo = lazy(retryLazy(() => import("./components/demo/CostTrackingIntegrationDemo").then(m => ({ default: m.CostTrackingIntegrationDemo }))));
+const CustomerCareExecutiveApp = lazy(retryLazy(() => import("./components/cce/CustomerCareExecutiveApp").then(m => ({ default: m.CustomerCareExecutiveApp }))));
+const CustomerPlanPage = lazy(retryLazy(() => import("./components/subscription/CustomerPlanPage").then(m => ({ default: m.CustomerPlanPage }))));
+const CustomerSubscription = lazy(retryLazy(() => import("./components/modules/CustomerSubscription").then(m => ({ default: m.CustomerSubscription }))));
+const DesignSystemTest = lazy(retryLazy(() => import("./design-system/tests/DesignSystemTest").then(m => ({ default: m.DesignSystemTest }))));
+const DeveloperRouteDirectory = lazy(retryLazy(() => import("./components/developer/DeveloperRouteDirectory").then(m => ({ default: m.DeveloperRouteDirectory }))));
+const EmployeeLedger = lazy(retryLazy(() => import("./components/hr/EmployeeLedger").then(m => ({ default: m.EmployeeLedger }))));
+const EmployeeLifecycleManagement = lazy(retryLazy(() => import("./components/hr/EmployeeLifecycleManagement").then(m => ({ default: m.EmployeeLifecycleManagement }))));
+const EmployeeOnboarding = lazy(retryLazy(() => import("./components/hr/EmployeeOnboarding").then(m => ({ default: m.EmployeeOnboarding }))));
+const EmployeeSalaryAssignment = lazy(retryLazy(() => import("./components/payroll/EmployeeSalaryAssignment").then(m => ({ default: m.EmployeeSalaryAssignment }))));
+const EmployeeSelfService = lazy(retryLazy(() => import("./components/hr/EmployeeSelfService").then(m => ({ default: m.EmployeeSelfService }))));
+const ExitFFSettlement = lazy(retryLazy(() => import("./components/hr/ExitFFSettlement").then(m => ({ default: m.ExitFFSettlement }))));
+const ExpansionOpportunities = lazy(retryLazy(() => import("./components/modules/ExpansionOpportunities").then(m => ({ default: m.ExpansionOpportunities }))));
+const ExpenseAnalytics = lazy(retryLazy(() => import("./components/accounts/ExpenseAnalytics").then(m => ({ default: m.ExpenseAnalytics }))));
+const ExpenseEntry = lazy(retryLazy(() => import("./components/accounts/ExpenseEntry").then(m => ({ default: m.ExpenseEntry }))));
+const ExpenseVoucher = lazy(retryLazy(() => import("./components/accounts/ExpenseVoucher").then(m => ({ default: m.ExpenseVoucher }))));
+const FinanceModule = lazy(retryLazy(() => import("./components/modules/FinanceModule").then(m => ({ default: m.FinanceModule }))));
+const FinanceTransactions = lazy(retryLazy(() => import("./components/finance/FinanceTransactions").then(m => ({ default: m.FinanceTransactions }))));
+const FinancialReportsModule = lazy(retryLazy(() => import("./components/finance/FinancialReportsModule").then(m => ({ default: m.FinancialReportsModule }))));
+const GRNEntry = lazy(retryLazy(() => import("./components/store-manager/GRNEntry").then(m => ({ default: m.GRNEntry }))));
+const GSTCustomerMaster = lazy(retryLazy(() => import("./components/gst/GSTCustomerMaster").then(m => ({ default: m.GSTCustomerMaster }))));
+const GSTFilingModule = lazy(retryLazy(() => import("./components/gst/GSTFilingModule").then(m => ({ default: m.GSTFilingModule }))));
+const GSTManagerReview = lazy(retryLazy(() => import("./components/gst/GSTManagerReview").then(m => ({ default: m.GSTManagerReview }))));
+const GSTMonitoringModule = lazy(retryLazy(() => import("./components/gst/GSTMonitoringModule").then(m => ({ default: m.GSTMonitoringModule }))));
+const GSTOverview = lazy(retryLazy(() => import("./components/gst/GSTOverview").then(m => ({ default: m.GSTOverview }))));
+const GSTR1Module = lazy(retryLazy(() => import("./components/gst/GSTR1Module").then(m => ({ default: m.GSTR1Module }))));
+const GSTR2AReport = lazy(retryLazy(() => import("./components/accounts/GSTR2AReport").then(m => ({ default: m.GSTR2AReport }))));
+const GSTR3BModule = lazy(retryLazy(() => import("./components/gst/GSTR3BModule").then(m => ({ default: m.GSTR3BModule }))));
+const GSTReconciliation = lazy(retryLazy(() => import("./components/gst/GSTReconciliation").then(m => ({ default: m.GSTReconciliation }))));
+const GSTReports = lazy(retryLazy(() => import("./components/gst/GSTReports").then(m => ({ default: m.GSTReports }))));
+const GSTTransactionEntry = lazy(retryLazy(() => import("./components/gst/GSTTransactionEntry").then(m => ({ default: m.GSTTransactionEntry }))));
+const GSTValidationCentre = lazy(retryLazy(() => import("./components/gst/GSTValidationCentre").then(m => ({ default: m.GSTValidationCentre }))));
+const GSTVendorMaster = lazy(retryLazy(() => import("./components/gst/GSTVendorMaster").then(m => ({ default: m.GSTVendorMaster }))));
+const HRAdvanceManagement = lazy(retryLazy(() => import("./components/advance/HRAdvanceManagement").then(m => ({ default: m.HRAdvanceManagement }))));
+const HRPayrollApproval = lazy(retryLazy(() => import("./components/hr/HRPayrollApproval").then(m => ({ default: m.HRPayrollApproval }))));
+const HolidayManagement = lazy(retryLazy(() => import("./components/hr/HolidayManagement").then(m => ({ default: m.HolidayManagement }))));
+const IDCardGenerator = lazy(retryLazy(() => import("./components/hr/IDCardGenerator").then(m => ({ default: m.IDCardGenerator }))));
+const IncentiveEngineDemo = lazy(retryLazy(() => import("./components/workflow/IncentiveEngineDemo").then(m => ({ default: m.IncentiveEngineDemo }))));
+const IncentiveSimulator = lazy(retryLazy(() => import("./components/incentives/IncentiveSimulator").then(m => ({ default: m.IncentiveSimulator }))));
+const IncentiveVisibilityAdmin = lazy(retryLazy(() => import("./components/admin/IncentiveVisibilityAdmin").then(m => ({ default: m.IncentiveVisibilityAdmin }))));
+const InventoryMonitoring = lazy(retryLazy(() => import("./components/store-manager/InventoryMonitoring").then(m => ({ default: m.InventoryMonitoring }))));
+const InventoryStore = lazy(retryLazy(() => import("./components/modules/InventoryStore").then(m => ({ default: m.InventoryStore }))));
+const ItemMaster = lazy(retryLazy(() => import("./components/accounts/ItemMaster").then(m => ({ default: m.ItemMaster }))));
+const JournalEntry = lazy(retryLazy(() => import("./components/accounts/JournalEntry").then(m => ({ default: m.JournalEntry }))));
+const LeavePolicyEngine = lazy(retryLazy(() => import("./components/hr/LeavePolicyEngine").then(m => ({ default: m.LeavePolicyEngine }))));
+const LedgerEntriesView = lazy(retryLazy(() => import("./components/finance/LedgerEntriesView").then(m => ({ default: m.LedgerEntriesView }))));
+const LedgerMaster = lazy(retryLazy(() => import("./components/accounts/LedgerMaster").then(m => ({ default: m.LedgerMaster }))));
+const LettersDocuments = lazy(retryLazy(() => import("./components/hr/LettersDocuments").then(m => ({ default: m.LettersDocuments }))));
+const LifeCycleReports = lazy(retryLazy(() => import("./components/hr/LifeCycleReports").then(m => ({ default: m.LifeCycleReports }))));
+const LongTermAdvanceForm = lazy(retryLazy(() => import("./components/advance/LongTermAdvanceForm").then(m => ({ default: m.LongTermAdvanceForm }))));
+const MOQManagement = lazy(retryLazy(() => import("./components/store-manager/MOQManagement").then(m => ({ default: m.MOQManagement }))));
+const MaterialRequisition = lazy(retryLazy(() => import("./components/inventory/MaterialRequisition").then(m => ({ default: m.MaterialRequisition }))));
+const MobileChangeRequest = lazy(retryLazy(() => import("./components/hr/MobileChangeRequest").then(m => ({ default: m.MobileChangeRequest }))));
+const MonthEndVerification = lazy(retryLazy(() => import("./components/inventory/MonthEndVerification").then(m => ({ default: m.MonthEndVerification }))));
+const MyAccountPage = lazy(retryLazy(() => import("./components/hr/MyAccountPage").then(m => ({ default: m.MyAccountPage }))));
+const MyStock = lazy(retryLazy(() => import("./components/washer/MyStock").then(m => ({ default: m.MyStock }))));
+const NotificationCenter = lazy(retryLazy(() => import("./components/crm/NotificationCenter").then(m => ({ default: m.NotificationCenter }))));
+const OnboardingAutomation = lazy(retryLazy(() => import("./components/hr/OnboardingAutomation").then(m => ({ default: m.OnboardingAutomation }))));
+const OperationsDataCapture = lazy(retryLazy(() => import("./components/operations/OperationsDataCapture").then(m => ({ default: m.OperationsDataCapture }))));
+const OperationsLayout = lazy(retryLazy(() => import("./components/operations/OperationsLayout").then(m => ({ default: m.OperationsLayout }))));
+const OperationsManagerApp = lazy(retryLazy(() => import("./components/om/OperationsManagerApp").then(m => ({ default: m.OperationsManagerApp }))));
+const OperationsRouter = lazy(retryLazy(() => import("./components/operations/OperationsRouter").then(m => ({ default: m.OperationsRouter }))));
+const OtherDeductionsModule = lazy(retryLazy(() => import("./components/advance/OtherDeductionsModule").then(m => ({ default: m.OtherDeductionsModule }))));
+const OtherEarningsModule = lazy(retryLazy(() => import("./components/advance/OtherEarningsModule").then(m => ({ default: m.OtherEarningsModule }))));
+const PackageCostMatrix = lazy(retryLazy(() => import("./components/finance/PackageCostMatrix").then(m => ({ default: m.PackageCostMatrix }))));
+const PartyLedger = lazy(retryLazy(() => import("./components/accounts/PartyLedger").then(m => ({ default: m.PartyLedger }))));
+const PayrollConfigTest = lazy(retryLazy(() => import("./components/payroll/PayrollConfigTest").then(m => ({ default: m.PayrollConfigTest }))));
+const PayrollConfiguration = lazy(retryLazy(() => import("./components/payroll/PayrollConfiguration").then(m => ({ default: m.PayrollConfiguration }))));
+const PayrollProcessing = lazy(retryLazy(() => import("./components/payroll/PayrollProcessing").then(m => ({ default: m.PayrollProcessing }))));
+const PayrollProcessingAdvanced = lazy(retryLazy(() => import("./components/payroll/PayrollProcessingAdvanced").then(m => ({ default: m.PayrollProcessingAdvanced }))));
+const PayrollReviewApproval = lazy(retryLazy(() => import("./components/payroll/PayrollReviewApproval").then(m => ({ default: m.PayrollReviewApproval }))));
+const PayrollRun = lazy(retryLazy(() => import("./components/payroll/PayrollRun").then(m => ({ default: m.PayrollRun }))));
+const PerformanceTracking = lazy(retryLazy(() => import("./components/performance/PerformanceTracking").then(m => ({ default: m.PerformanceTracking }))));
+const PermissionManagementPage = lazy(retryLazy(() => import("./components/admin/PermissionManagementPage").then(m => ({ default: m.PermissionManagementPage }))));
+const PlanEditor = lazy(retryLazy(() => import("./components/subscription/PlanEditor").then(m => ({ default: m.PlanEditor }))));
+const PlanSelectionScreen = lazy(retryLazy(() => import("./components/subscription/PlanSelectionScreen").then(m => ({ default: m.PlanSelectionScreen }))));
+const ProcurementModule = lazy(retryLazy(() => import("./components/modules/ProcurementModule").then(m => ({ default: m.ProcurementModule }))));
+const PurchaseOrderCreation = lazy(retryLazy(() => import("./components/store-manager/PurchaseOrderCreation").then(m => ({ default: m.PurchaseOrderCreation }))));
+const PurchaseSummaryReport = lazy(retryLazy(() => import("./components/accounts/PurchaseSummaryReport").then(m => ({ default: m.PurchaseSummaryReport }))));
+const RCMReport = lazy(retryLazy(() => import("./components/accounts/RCMReport").then(m => ({ default: m.RCMReport }))));
+const RazorpayFlow = lazy(retryLazy(() => import("./components/accounts/RazorpayFlow").then(m => ({ default: m.RazorpayFlow }))));
+const RevenueCaptureSystem = lazy(retryLazy(() => import("./components/finance/RevenueCaptureSystem").then(m => ({ default: m.RevenueCaptureSystem }))));
+const RolePermissionManager = lazy(retryLazy(() => import("./components/admin/RolePermissionManager").then(m => ({ default: m.RolePermissionManager }))));
+const RoleSuggestionsPage = lazy(retryLazy(() => import("./components/hr/RoleSuggestionsPage").then(m => ({ default: m.RoleSuggestionsPage }))));
+const SalaryPayableView = lazy(retryLazy(() => import("./components/payroll/SalaryPayableView").then(m => ({ default: m.SalaryPayableView }))));
+const SalaryPaymentScreen = lazy(retryLazy(() => import("./components/payroll/SalaryPaymentScreen").then(m => ({ default: m.SalaryPaymentScreen }))));
+const SalesHeadApp = lazy(retryLazy(() => import("./components/sh/SalesHeadApp").then(m => ({ default: m.SalesHeadApp }))));
+const SalesManagerApp = lazy(retryLazy(() => import("./components/sm/SalesManagerApp").then(m => ({ default: m.SalesManagerApp }))));
+const SalesSummaryReport = lazy(retryLazy(() => import("./components/accounts/SalesSummaryReport").then(m => ({ default: m.SalesSummaryReport }))));
+const ServiceZonesManagement = lazy(retryLazy(() => import("./components/modules/ServiceZonesManagement").then(m => ({ default: m.ServiceZonesManagement }))));
+const ShiftManagementPage = lazy(retryLazy(() => import("./components/admin/ShiftManagementPage").then(m => ({ default: m.ShiftManagementPage }))));
+const ShortTermAdvanceForm = lazy(retryLazy(() => import("./components/advance/ShortTermAdvanceForm").then(m => ({ default: m.ShortTermAdvanceForm }))));
+const StatutoryFormsVerification = lazy(retryLazy(() => import("./components/hr/StatutoryFormsVerification").then(m => ({ default: m.StatutoryFormsVerification }))));
+const StatutoryPayablesScreen = lazy(retryLazy(() => import("./components/payroll/StatutoryPayablesScreen").then(m => ({ default: m.StatutoryPayablesScreen }))));
+const StoreManagerModule = lazy(retryLazy(() => import("./components/modules/StoreManagerModule").then(m => ({ default: m.StoreManagerModule }))));
+const StoreModule = lazy(retryLazy(() => import("./components/modules/StoreModule").then(m => ({ default: m.StoreModule }))));
+const SubscriptionApp = lazy(retryLazy(() => import("./components/subscription/SubscriptionApp").then(m => ({ default: m.SubscriptionApp }))));
+const SubscriptionDiagnostics = lazy(retryLazy(() => import("./components/subscription/SubscriptionDiagnostics").then(m => ({ default: m.SubscriptionDiagnostics }))));
+const SuperAdminPayrollApproval = lazy(retryLazy(() => import("./components/admin/SuperAdminPayrollApproval").then(m => ({ default: m.SuperAdminPayrollApproval }))));
+const SuperAdminPlanEditor = lazy(retryLazy(() => import("./components/admin/SuperAdminPlanEditor").then(m => ({ default: m.SuperAdminPlanEditor }))));
+const SupervisorAppConnected = lazy(retryLazy(() => import("./components/supervisor/SupervisorAppConnected").then(m => ({ default: m.SupervisorAppConnected }))));
+const SupervisorLayout = lazy(retryLazy(() => import("./components/supervisor/SupervisorLayout").then(m => ({ default: m.SupervisorLayout }))));
+const SupervisorModuleUpdated = lazy(retryLazy(() => import("./components/modules/SupervisorModuleUpdated").then(m => ({ default: m.SupervisorModuleUpdated }))));
+const SupplierDetail = lazy(retryLazy(() => import("./components/procurement/SupplierDetail").then(m => ({ default: m.SupplierDetail }))));
+const SystemIntegrationDemo = lazy(retryLazy(() => import("./components/washer/SystemIntegrationDemo").then(m => ({ default: m.SystemIntegrationDemo }))));
+const TSEDiagnostics = lazy(retryLazy(() => import("./components/tse/TSEDiagnostics").then(m => ({ default: m.TSEDiagnostics }))));
+const TeleSalesExecutiveApp = lazy(retryLazy(() => import("./components/tse/TeleSalesExecutiveApp").then(m => ({ default: m.TeleSalesExecutiveApp }))));
+const TeleSalesManagerApp = lazy(retryLazy(() => import("./components/tsm/TeleSalesManagerApp").then(m => ({ default: m.TeleSalesManagerApp }))));
+const TestStatutoryRoutes = lazy(retryLazy(() => import("./components/TestStatutoryRoutes").then(m => ({ default: m.TestStatutoryRoutes }))));
+const TransactionSubTypeManager = lazy(retryLazy(() => import("./components/gst/TransactionSubTypeManager").then(m => ({ default: m.TransactionSubTypeManager }))));
+const TrialBalance = lazy(retryLazy(() => import("./components/accounts/TrialBalance").then(m => ({ default: m.TrialBalance }))));
+const UserManagement = lazy(retryLazy(() => import("./components/modules/UserManagement").then(m => ({ default: m.UserManagement }))));
+const VendorPayment = lazy(retryLazy(() => import("./components/accounts/VendorPayment").then(m => ({ default: m.VendorPayment }))));
+const VendorRequest = lazy(retryLazy(() => import("./components/store-manager/VendorRequest").then(m => ({ default: m.VendorRequest }))));
+const WasherAttendanceHistory = lazy(retryLazy(() => import("./components/washer/WasherAttendanceHistory").then(m => ({ default: m.WasherAttendanceHistory }))));
+const WasherCoreScreensConnected = lazy(retryLazy(() => import("./components/washer/WasherCoreScreensConnected").then(m => ({ default: m.WasherCoreScreensConnected }))));
+const WasherCoreScreensDemo = lazy(retryLazy(() => import("./components/washer/WasherCoreScreensDemo").then(m => ({ default: m.WasherCoreScreensDemo }))));
+const WasherIssuances = lazy(retryLazy(() => import("./components/inventory/WasherIssuances").then(m => ({ default: m.WasherIssuances }))));
+const WasherJobExecution = lazy(retryLazy(() => import("./components/modules/WasherJobExecution").then(m => ({ default: m.WasherJobExecution }))));
+const WasherStockLedger = lazy(retryLazy(() => import("./components/inventory/WasherStockLedger").then(m => ({ default: m.WasherStockLedger }))));
+const WeekOffCoverDemo = lazy(retryLazy(() => import("./components/washer/WeekOffCoverDemo").then(m => ({ default: m.WeekOffCoverDemo }))));
+const WorkflowControlDemo = lazy(retryLazy(() => import("./components/workflow/WorkflowControlDemo").then(m => ({ default: m.WorkflowControlDemo }))));
+const WorkforceDiagnostic = lazy(retryLazy(() => import("./components/workforce/WorkforceDiagnostic").then(m => ({ default: m.WorkforceDiagnostic }))));
+const WorkingHoursSetup = lazy(retryLazy(() => import("./components/workforce/WorkingHoursSetup").then(m => ({ default: m.WorkingHoursSetup }))));
+const WorkingHoursSimple = lazy(retryLazy(() => import("./components/workforce/WorkingHoursSimple").then(m => ({ default: m.WorkingHoursSimple }))));
+const WorkingHoursTest = lazy(retryLazy(() => import("./components/workforce/WorkingHoursTest").then(m => ({ default: m.WorkingHoursTest }))));
 
-// Loading fallback for lazy-loaded routes — skeleton looks like real content
+// Loading fallback — skeleton that looks like real content
 const PageLoader = () => (
   <div className="p-6 space-y-4 animate-pulse">
     <div className="h-8 bg-gray-200 rounded w-1/3" />
     <div className="h-4 bg-gray-100 rounded w-1/2" />
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-      {[1,2,3].map(i => (
-        <div key={i} className="h-28 bg-gray-100 rounded-xl border border-gray-200" />
-      ))}
+      {[1,2,3].map(i => <div key={i} className="h-28 bg-gray-100 rounded-xl border border-gray-200" />)}
     </div>
     <div className="h-64 bg-gray-100 rounded-xl border border-gray-200 mt-4" />
-    <div className="h-48 bg-gray-100 rounded-xl border border-gray-200" />
   </div>
 );
 
+// Retry wrapper — catches chunk load failures (stale cache) and reloads
+function retryLazy<T>(factory: () => Promise<T>): () => Promise<T> {
+  return () => factory().catch(() => {
+    window.location.reload();
+    return factory();
+  });
+}
+
 // Lazy-loaded heavy components for code splitting
-const OnboardingPortal = lazy(() => import("./components/OnboardingPortal"));
-const HRModule = lazy(() => import("./components/modules/HRModule"));
-const ProfessionalLeaveManagement = lazy(() => import("./components/hr/ProfessionalLeaveManagement"));
-const StatutoryFormsOnboarding = lazy(() => import("./components/hr/StatutoryFormsOnboarding"));
-const TravelReimbursementModule = lazy(() => import("./components/travel/TravelReimbursementModule"));
-const CreateSalaryStructure = lazy(() => import("./components/payroll/CreateSalaryStructure"));
-const ChartOfAccounts = lazy(() => import("./components/finance/ChartOfAccounts"));
-const AdminPlanManagement = lazy(() => import("./components/subscription/AdminPlanManagement"));
-const IncentiveConfiguration = lazy(() => import("./components/incentives/IncentiveConfiguration"));
+const OnboardingPortal = lazy(retryLazy(() => import("./components/OnboardingPortal")));
+const HRModule = lazy(retryLazy(() => import("./components/modules/HRModule")));
+const ProfessionalLeaveManagement = lazy(retryLazy(() => import("./components/hr/ProfessionalLeaveManagement")));
+const StatutoryFormsOnboarding = lazy(retryLazy(() => import("./components/hr/StatutoryFormsOnboarding")));
+const TravelReimbursementModule = lazy(retryLazy(() => import("./components/travel/TravelReimbursementModule")));
+const CreateSalaryStructure = lazy(retryLazy(() => import("./components/payroll/CreateSalaryStructure")));
+const ChartOfAccounts = lazy(retryLazy(() => import("./components/finance/ChartOfAccounts")));
+const AdminPlanManagement = lazy(retryLazy(() => import("./components/subscription/AdminPlanManagement")));
+const IncentiveConfiguration = lazy(retryLazy(() => import("./components/incentives/IncentiveConfiguration")));
 
 // Analytics module - all lazy loaded
-const UnitEconomicsDashboard = lazy(() => import("./components/analytics/UnitEconomicsDashboard"));
-const CustomerLTVAnalysis = lazy(() => import("./components/analytics/CustomerLTVAnalysis"));
-const CACDashboard = lazy(() => import("./components/analytics/CACDashboard"));
-const BreakEvenAnalysis = lazy(() => import("./components/analytics/BreakEvenAnalysis"));
-const CostPerWashCalculatorEnhanced = lazy(() => import("./components/analytics/CostPerWashCalculatorEnhanced"));
-const CostPerWashByPlan = lazy(() => import("./components/analytics/CostPerWashByPlan"));
-const CostPerWashByConsumption = lazy(() => import("./components/analytics/CostPerWashByConsumption"));
-const LabourCostPerWash = lazy(() => import("./components/analytics/LabourCostPerWash"));
-const EmployeeEfficiency = lazy(() => import("./components/analytics/EmployeeEfficiency"));
-const CityComparison = lazy(() => import("./components/analytics/CityComparison"));
+const UnitEconomicsDashboard = lazy(retryLazy(() => import("./components/analytics/UnitEconomicsDashboard")));
+const CustomerLTVAnalysis = lazy(retryLazy(() => import("./components/analytics/CustomerLTVAnalysis")));
+const CACDashboard = lazy(retryLazy(() => import("./components/analytics/CACDashboard")));
+const BreakEvenAnalysis = lazy(retryLazy(() => import("./components/analytics/BreakEvenAnalysis")));
+const CostPerWashCalculatorEnhanced = lazy(retryLazy(() => import("./components/analytics/CostPerWashCalculatorEnhanced")));
+const CostPerWashByPlan = lazy(retryLazy(() => import("./components/analytics/CostPerWashByPlan")));
+const CostPerWashByConsumption = lazy(retryLazy(() => import("./components/analytics/CostPerWashByConsumption")));
+const LabourCostPerWash = lazy(retryLazy(() => import("./components/analytics/LabourCostPerWash")));
+const EmployeeEfficiency = lazy(retryLazy(() => import("./components/analytics/EmployeeEfficiency")));
+const CityComparison = lazy(retryLazy(() => import("./components/analytics/CityComparison")));
 
 // R3 FIX: Founder module properly lazy-loaded (was importing eagerly despite "NOW LAZY" comments)
-const FounderControlTower  = lazy(() => import("./components/founder/FounderControlTower"));
-const DetailedFinancialView = lazy(() => import("./components/founder/DetailedFinancialView"));
-const CashFlowDashboard    = lazy(() => import("./components/founder/CashFlowDashboard"));
-const MarketingROIDrilldown = lazy(() => import("./components/founder/MarketingROIDrilldown"));
+const FounderControlTower  = lazy(retryLazy(() => import("./components/founder/FounderControlTower")));
+const DetailedFinancialView = lazy(retryLazy(() => import("./components/founder/DetailedFinancialView")));
+const CashFlowDashboard    = lazy(retryLazy(() => import("./components/founder/CashFlowDashboard")));
+const MarketingROIDrilldown = lazy(retryLazy(() => import("./components/founder/MarketingROIDrilldown")));
 
 // Keep these as regular imports (frequently accessed)
 // import { OnboardingPortal } from "./components/OnboardingPortal"; // NOW LAZY
@@ -203,77 +216,57 @@ import { OnboardingRedirect } from "./components/onboarding/OnboardingRedirect";
 import { DevOnlyRoute } from "./components/guards/DevOnlyRoute";
 import { Dashboard } from "./components/Dashboard";
 
-const CRMConversionAnalyticsDashboard = lazy(() => import("./components/modules/CRMConversionAnalyticsDashboard").then(m => ({ default: m.CRMConversionAnalyticsDashboard })));
+import { CRMConversionAnalyticsDashboard } from "./components/modules/CRMConversionAnalyticsDashboard";
 
-const FinanceModule = lazy(() => import("./components/modules/FinanceModule").then(m => ({ default: m.FinanceModule })));
-// import { ChartOfAccounts } from "./components/finance/ChartOfAccounts"; // NOW LAZY
+import { FinanceAnalyticsDashboard } from "./components/finance/FinanceAnalyticsDashboard";
 
-const FinanceAnalyticsDashboard = lazy(() => import("./components/finance/FinanceAnalyticsDashboard").then(m => ({ default: m.FinanceAnalyticsDashboard })));
-
-const InvoiceManagement = lazy(() => import("./components/finance/InvoiceManagement"));
-const InvoiceDetail = lazy(() => import("./components/finance/InvoiceDetail"));
-const PaymentManagement = lazy(() => import("./components/finance/PaymentManagement"));
+const InvoiceManagement = lazy(retryLazy(() => import("./components/finance/InvoiceManagement")));
+const InvoiceDetail = lazy(retryLazy(() => import("./components/finance/InvoiceDetail")));
+const PaymentManagement = lazy(retryLazy(() => import("./components/finance/PaymentManagement")));
 // import { HRModule } from "./components/modules/HRModule"; // NOW LAZY
 // import { ProfessionalLeaveManagement } from "./components/hr/ProfessionalLeaveManagement"; // NOW LAZY
 
-// import { StatutoryFormsOnboarding } from "./components/hr/StatutoryFormsOnboarding"; // NOW LAZY
+import { SystemAuditDashboard } from "./components/audit/SystemAuditDashboard";
 
-const SystemAuditDashboard = lazy(() => import("./components/audit/SystemAuditDashboard").then(m => ({ default: m.SystemAuditDashboard })));
-
-const GSTDashboard = lazy(() => import("./components/accounts/GSTDashboard").then(m => ({ default: m.GSTDashboard })));
+import { GSTDashboard } from "./components/accounts/GSTDashboard";
 // Phase 1 Accounting Entry System
 
-const AccountsDashboard = lazy(() => import("./components/accounts/AccountsDashboard").then(m => ({ default: m.AccountsDashboard })));
+import { AccountsDashboard } from "./components/accounts/AccountsDashboard";
 
-const TDSPayableModule = lazy(() => import("./components/accounts/TDSPayableModule"));
-const AdvanceTaxCalculator = lazy(() => import("./components/accounts/AdvanceTaxCalculator"));
-const PayablesDashboard = lazy(() => import("./components/accounts/PayablesDashboard"));
+const TDSPayableModule = lazy(retryLazy(() => import("./components/accounts/TDSPayableModule")));
+const AdvanceTaxCalculator = lazy(retryLazy(() => import("./components/accounts/AdvanceTaxCalculator")));
+const PayablesDashboard = lazy(retryLazy(() => import("./components/accounts/PayablesDashboard")));
 // Phase 3 Accounting Reports
 
-// Analytics imports - NOW LAZY
 // import { UnitEconomicsDashboard } from "./components/analytics/UnitEconomicsDashboard"; // NOW LAZY
 // import { CustomerLTVAnalysis } from "./components/analytics/CustomerLTVAnalysis"; // NOW LAZY
 // import { CACDashboard } from "./components/analytics/CACDashboard"; // NOW LAZY
 // import { BreakEvenAnalysis } from "./components/analytics/BreakEvenAnalysis"; // NOW LAZY
-const AnalyticsDashboardWithDrillDown = lazy(() => import("./components/dashboards/AnalyticsDashboardWithDrillDown").then(m => ({ default: m.AnalyticsDashboardWithDrillDown })));
+import { AnalyticsDashboardWithDrillDown } from "./components/dashboards/AnalyticsDashboardWithDrillDown";
 // import { CostPerWashCalculatorEnhanced } from "./components/analytics/CostPerWashCalculatorEnhanced"; // NOW LAZY
 // import { CostPerWashByPlan } from "./components/analytics/CostPerWashByPlan"; // NOW LAZY
 // import { CostPerWashByConsumption } from "./components/analytics/CostPerWashByConsumption"; // NOW LAZY
 // import { LabourCostPerWash } from "./components/analytics/LabourCostPerWash"; // NOW LAZY
 // import { EmployeeEfficiency } from "./components/analytics/EmployeeEfficiency"; // NOW LAZY
 // import { CityComparison } from "./components/analytics/CityComparison"; // NOW LAZY
-const RoleBasedAnalyticsDashboard = lazy(() => import("./components/examples/RoleBasedAnalyticsDashboard").then(m => ({ default: m.RoleBasedAnalyticsDashboard })));
+import { RoleBasedAnalyticsDashboard } from "./components/examples/RoleBasedAnalyticsDashboard";
 
-// Founder module imports - NOW LAZY
 // import { FounderControlTower } from "./components/founder/FounderControlTower"; // NOW LAZY
 // import { DetailedFinancialView } from "./components/founder/DetailedFinancialView"; // NOW LAZY
 // import { CashFlowDashboard } from "./components/founder/CashFlowDashboard"; // NOW LAZY
 // import { MarketingROIDrilldown } from "./components/founder/MarketingROIDrilldown"; // NOW LAZY
 
-// import { CreateSalaryStructure } from "./components/payroll/CreateSalaryStructure"; // NOW LAZY
-const PayrollRun = lazy(() => import("./components/payroll/PayrollRun").then(m => ({ default: m.PayrollRun })));
+import { ClothAdminDashboard } from "./components/cloth-tracking/ClothAdminDashboard";
 
-const ClothAdminDashboard = lazy(() => import("./components/cloth-tracking/ClothAdminDashboard").then(m => ({ default: m.ClothAdminDashboard })));
+import { EmployeeAdvanceDashboard } from "./components/advance/EmployeeAdvanceDashboard";
 
-const EmployeeAdvanceDashboard = lazy(() => import("./components/advance/EmployeeAdvanceDashboard").then(m => ({ default: m.EmployeeAdvanceDashboard })));
+const TestBTLService = lazy(retryLazy(() => import("./test-btl-service")));
 
-// R2 FIX: test-btl-service file may not exist — converted to lazy with error boundary
+import { HierarchyDashboard } from "./components/hierarchy/HierarchyDashboard";
 
-// import { AdminPlanManagement } from "./components/subscription/AdminPlanManagement"; // NOW LAZY
+import { IncentiveDashboard } from "./components/incentives/IncentiveDashboard";
 
-const HierarchyDashboard = lazy(() => import("./components/hierarchy/HierarchyDashboard").then(m => ({ default: m.HierarchyDashboard })));
-
-// import { IncentiveConfiguration } from "./components/incentives/IncentiveConfiguration"; // NOW LAZY
-
-const IncentiveDashboard = lazy(() => import("./components/incentives/IncentiveDashboard").then(m => ({ default: m.IncentiveDashboard })));
-
-const ShiftManagementPage = lazy(() => import("./components/admin/ShiftManagementPage").then(m => ({ default: m.ShiftManagementPage })));
-const AttendanceFraudAlertsPage = lazy(() => import("./components/admin/AttendanceFraudAlertsPage").then(m => ({ default: m.AttendanceFraudAlertsPage })));
-const PermissionManagementPage = lazy(() => import("./components/admin/PermissionManagementPage").then(m => ({ default: m.PermissionManagementPage })));
-const RolePermissionManager = lazy(() => import("./components/admin/RolePermissionManager").then(m => ({ default: m.RolePermissionManager })));
-const IncentiveVisibilityAdmin = lazy(() => import("./components/admin/IncentiveVisibilityAdmin").then(m => ({ default: m.IncentiveVisibilityAdmin })));
-const RoleSuggestionsPage = lazy(() => import("./components/hr/RoleSuggestionsPage").then(m => ({ default: m.RoleSuggestionsPage })));
-const HRIntelligenceDashboard = lazy(() => import("./components/hr/HRIntelligenceDashboard").then(m => ({ default: m.HRIntelligenceDashboard })));
+import { HRIntelligenceDashboard } from "./components/hr/HRIntelligenceDashboard";
 
 import { UnauthorizedPage } from "./components/pages/UnauthorizedPage";
 import { LoginPage } from "./pages/LoginPage";
@@ -500,7 +493,7 @@ export const router = createHashRouter([
       { path: "payroll/statutory-payables", element: <ErrorBoundary><Suspense fallback={<PageLoader />}><StatutoryPayablesScreen /></Suspense></ErrorBoundary> },
       {
         path: "subscription",
-        element: <ErrorBoundary><Suspense fallback={<PageLoader />}><Outlet /></Suspense></ErrorBoundary>,
+        element: <Outlet />,
         children: [
           { index: true, element: <Navigate to="/subscription/plan-management" replace /> },
           { path: "plan-management", element: <ErrorBoundary><Suspense fallback={<PageLoader />}><AdminPlanManagement userRole="ADMIN" /></Suspense></ErrorBoundary> },
