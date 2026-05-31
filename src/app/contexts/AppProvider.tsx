@@ -19,8 +19,6 @@ import { CustomerProvider } from "./CustomerContext";
 import { CustomerSubscriptionProvider } from "./CustomerSubscriptionContext";
 import { PlanDefinitionProvider } from "./PlanDefinitionContext";
 import { JobProvider } from "./JobContext";
-import { SyncInitializer } from "../components/SyncInitializer";
-import { MigrationInitializer } from "../components/MigrationInitializer";
 
 // PHASE 4: Domain-specific contexts
 import { OrgProvider } from "./OrgContext";
@@ -43,6 +41,12 @@ import { DemoProvider } from "./DemoContext";
 import { ApprovalProvider } from "./ApprovalContext";
 import { SidebarProvider } from "./SidebarContext";
 import { ScenarioProvider } from "./ScenarioContext";
+
+// Inline stubs - no-op components to avoid missing file errors
+const SyncInitializer = () => null;
+const MigrationInitializer = () => null;
+
+
 
 interface AppProviderProps {
   children: ReactNode;
