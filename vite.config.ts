@@ -26,13 +26,31 @@ export default defineConfig({
   build: {
     chunkSizeWarningLimit: 1200,
     sourcemap: false,
+    // Preload all chunks so navigation is instant after first load
+    modulePreload: { polyfill: true },
     rollupOptions: {
       output: {
-        manualChunks: {
-          'vendor-react':   ['react', 'react-dom', 'react-router-dom'],
-          'vendor-query':   ['@tanstack/react-query'],
-          'vendor-charts':  ['recharts'],
-          'vendor-ui':      ['lucide-react', 'sonner'],
+        manualChunks(id) {
+          // Core vendor — always needed immediately
+          if (id.includes('node_modules/react/') ||
+              id.includes('node_modules/react-dom/') ||
+              id.includes('node_modules/react-router-dom/')) {
+            return 'vendor-react';
+          }
+          // TanStack Query
+          if (id.includes('@tanstack/react-query')) return 'vendor-query';
+          // Charts — large but needed by many pages
+          if (id.includes('recharts') || id.includes('d3-')) return 'vendor-charts';
+          // UI components
+          if (id.includes('lucide-react') || id.includes('sonner') ||
+              id.includes('@radix-ui') || id.includes('class-variance-authority') ||
+              id.includes('tailwind-merge')) {
+            return 'vendor-ui';
+          }
+          // Animation
+          if (id.includes('framer-motion') || id.includes('/motion/')) return 'vendor-motion';
+          // Date utilities
+          if (id.includes('date-fns')) return 'vendor-dates';
         },
       },
     },
