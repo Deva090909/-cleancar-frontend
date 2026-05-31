@@ -118,7 +118,7 @@ const OnboardingAutomation = lazy(() => import("./components/hr/OnboardingAutoma
 const EmployeeSalaryAssignment = lazy(() => import("./components/payroll/EmployeeSalaryAssignment").then(m => ({default: m.EmployeeSalaryAssignment || m.default})));
 const EmployeeSelfService = lazy(() => import("./components/hr/EmployeeSelfService").then(m => ({default: m.EmployeeSelfService || m.default})));
 const AttendanceDataManager = lazy(() => import("./components/admin/AttendanceDataManager").then(m => ({default: m.AttendanceDataManager || m.default})));
-const ApprovalCenter as ApprovalCenterHR = lazy(() => import("./components/hr/ApprovalCenter").then(m => ({default: m.ApprovalCenter as ApprovalCenterHR || m.default})));
+const ApprovalCenterHR = lazy(() => import("./components/hr/ApprovalCenter").then(m => ({default: m.ApprovalCenter || m.default})));
 const TestStatutoryRoutes = lazy(() => import("./components/TestStatutoryRoutes").then(m => ({default: m.TestStatutoryRoutes || m.default})));
 const DeveloperRouteDirectory = lazy(() => import("./components/developer/DeveloperRouteDirectory").then(m => ({default: m.DeveloperRouteDirectory || m.default})));
 const ApprovalCenter = lazy(() => import("./components/ApprovalCenter").then(m => ({default: m.ApprovalCenter || m.default})));
