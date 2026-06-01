@@ -876,7 +876,7 @@ export function CustomerPlanPage() {
                     {cfg.packs.map((pack,i)=>{
                       const nested=(pack as any).prices;
                       let dp=0;
-                      if(nested){const w=nested.shampoo??nested.waterWash??Object.values(nested)[0]; if(w&&typeof w==="object")dp=(w as any)[vehicleCat]??(w as any).hatchback??0;}
+                      if(nested){const w=nested[_washRef.current]??nested.shampoo??nested.waterWash??Object.values(nested)[0]; if(w&&typeof w==="object")dp=(w as any)[vehicleCat]??(w as any).hatchback??0;}
                       if(!dp&&typeof(pack as any).price==="number")dp=(pack as any).price;
                       const colors=["#6366f1","#10b981","#f59e0b"];
                       const sel=selectedPack===pack.id;
@@ -886,6 +886,11 @@ export function CustomerPlanPage() {
                             <div style={{fontSize:32,marginBottom:8}}>{pack.icon}</div>
                             <div style={{fontSize:15,fontWeight:800,color:"#0f172a"}}>{pack.name}</div>
                             {dp>0&&<div style={{fontSize:22,fontWeight:800,color:colors[i],fontFamily:"'Playfair Display',serif",margin:"6px 0"}}>{inr(dp)}</div>}
+                            {dp>0&&pack.id!=="onetime"&&(
+                              <div style={{fontSize:11,fontWeight:600,marginBottom:4,opacity:0.85,color:colors[i]}}>
+                                {_washRef.current==="waterWash"?"💧 Water Wash":_washRef.current==="shampooWax"?"✨ Shampoo+Wax":"🧴 Shampoo"}
+                              </div>
+                            )}
                             {(pack as any).discount&&<span className="cpp-badge" style={{background:"rgba(16,185,129,0.12)",color:"#059669"}}>{(pack as any).discount}</span>}
                             {pack.id==="onetime"&&activeCat&&(
                               <div style={{marginTop:10,borderTop:"1px dashed #e2e8f0",paddingTop:8}}>
@@ -902,6 +907,10 @@ export function CustomerPlanPage() {
                         </div>
                       );
                     })}
+                  </div>
+                  {/* Wash type hint */}
+                  <div style={{marginTop:8,marginBottom:4,fontSize:12,color:"#94a3b8",textAlign:"center"}}>
+                    💡 Prices above are for <strong style={{color:"#6366f1"}}>{_washRef.current==="waterWash"?"Water Wash":_washRef.current==="shampooWax"?"Shampoo+Wax":"Shampoo"}</strong> — change wash type below
                   </div>
                   {selectedPack&&(
                     <div style={{padding:"16px 20px",background:"linear-gradient(135deg,#f5f3ff,#ede9fe)",borderRadius:16,marginBottom:24,border:"2px solid #ddd6fe"}}>
