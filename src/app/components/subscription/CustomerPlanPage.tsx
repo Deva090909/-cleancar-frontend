@@ -6,6 +6,7 @@ import { useFinance } from "../../contexts/FinanceContext";
 import { useCustomers } from "../../contexts/AppProvider";
 import { useCustomerSubscriptions } from "../../contexts/AppProvider";
 import { useCity } from "../../contexts/CityContext";
+import { planSyncService } from "../../services/planSyncService";
 
 // ─── CONFIG TYPES ─────────────────────────────────────────────────────────────
 export interface PlanPageConfig {
@@ -427,6 +428,18 @@ export function CustomerPlanPage() {
   const [isProcessing,setIsProcessing]=useState(false);
   const [generatedInvoice,setGeneratedInvoice]=useState<any>(null);
   const [showConfetti,setShowConfetti]=useState(false);
+  // Coupon & referral
+  const [couponInput,setCouponInput]=useState("");
+  const [couponResult,setCouponResult]=useState<{valid:boolean;discount:number;error?:string;code?:string}|null>(null);
+  const [referralInput,setReferralInput]=useState("");
+  const [referralResult,setReferralResult]=useState<{valid:boolean;discount:number;error?:string;code?:string}|null>(null);
+  // Auto-apply active promotions
+  const activePromos = planSyncService.getActiveAutoPromotions();
+  const promoDiscount = activePromos.reduce((s,p)=>{
+    if(p.type==="percent") return s + Math.round((planMode==="monthly"?planPrice:packPrice)*p.value/100);
+    if(p.type==="flat") return s + p.value;
+    return s;
+  }, 0);
 
   const { recordRevenue } = useFinance();
   const { addCustomer, customers } = useCustomers();
@@ -467,6 +480,15 @@ export function CustomerPlanPage() {
   const scrollRef=useRef<HTMLDivElement>(null);
   const goTo=useCallback((n:number)=>{ setStep(n); setTimeout(()=>scrollRef.current?.scrollIntoView({behavior:"smooth",block:"start"}),50); },[]);
 
+  const handleApplyCoupon = () => {
+    const result = planSyncService.validateCoupon(couponInput.trim(), total, selectedPlan||undefined);
+    setCouponResult(result.valid ? {...result, code:couponInput.trim().toUpperCase()} : result);
+  };
+  const handleApplyReferral = () => {
+    const result = planSyncService.validateReferralCode(referralInput.trim(), total);
+    setReferralResult(result.valid ? {...result, code:referralInput.trim().toUpperCase()} : result);
+  };
+  
   const handleSubmit=async()=>{
     setIsProcessing(true);
     try {
@@ -486,6 +508,9 @@ export function CustomerPlanPage() {
       try{const st=JSON.parse(localStorage.getItem("cleancar_web_invoices")||"[]");st.unshift({...invoice,createdAt:now.toISOString(),status:"PAID"});localStorage.setItem("cleancar_web_invoices",JSON.stringify(st.slice(0,500)));}catch(_){}
       const waMsg=encodeURIComponent(`Hi ${firstName}! 🎉\n\nYour ${invoice.items[0].name} is confirmed!\n\nInvoice: ${invNum}\nAmount Paid: ₹${(invoice?.grandTotal??0).toLocaleString("en-IN")} (incl. GST)\n\nThank you for choosing ${cfg.brand.name}! 🚗✨`);
       if(notifyPref==="whatsapp"||notifyPref==="both"){(window as any)._pendingWAInvoice=`https://wa.me/${cfg.brand.whatsappNumber}?text=${waMsg}`;}
+      // Redeem coupon/referral
+      if(couponResult?.valid && couponResult.code) planSyncService.redeemCoupon(couponResult.code);
+      if(referralResult?.valid && referralResult.code) planSyncService.convertReferral(referralResult.code, customerId, custName, finalTotal);
       setIsProcessing(false);
       setShowConfetti(true);
       setTimeout(()=>setShowConfetti(false),4000);
@@ -995,6 +1020,63 @@ export function CustomerPlanPage() {
                 </div>
               )}
 
+
+              {/* Coupon / Referral codes */}
+              <div style={{marginBottom:20}}>
+                <div style={{fontSize:14,fontWeight:700,color:"#0f172a",marginBottom:12}}>🎟️ Have a coupon or referral code?</div>
+                
+                {/* Active auto-promotions banner */}
+                {activePromos.length>0&&(
+                  <div style={{marginBottom:12,padding:"10px 14px",background:"linear-gradient(135deg,#fffbeb,#fef3c7)",border:"2px solid #fcd34d",borderRadius:12}}>
+                    {activePromos.map(p=>(
+                      <div key={p.id} style={{display:"flex",alignItems:"center",gap:8,fontSize:13}}>
+                        <span style={{fontSize:18}}>{p.badge}</span>
+                        <div>
+                          <div style={{fontWeight:700,color:"#92400e"}}>{p.name}</div>
+                          <div style={{fontSize:12,color:"#d97706"}}>{p.type==="percent"?`${p.value}% off applied automatically`:p.type==="flat"?`₹${p.value} off applied automatically`:"Offer applied"} — {p.description}</div>
+                        </div>
+                        <div style={{marginLeft:"auto",fontWeight:800,color:"#d97706",fontSize:15}}>-₹{p.type==="percent"?Math.round((planMode==="monthly"?planPrice:packPrice)*p.value/100):p.value}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Coupon code */}
+                <div style={{display:"flex",gap:8,marginBottom:8}}>
+                  <div style={{position:"relative",flex:1}}>
+                    <span style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",fontSize:14}}>🎟️</span>
+                    <input className="cpp-input" value={couponInput} onChange={e=>setCouponInput(e.target.value.toUpperCase())} placeholder="Coupon code (e.g. SAVE20)" style={{paddingLeft:36,fontFamily:"monospace",fontWeight:700,letterSpacing:2,border:`2px solid ${couponResult?.valid?"#10b981":couponResult?.error?"#ef4444":"rgba(148,163,184,0.3)"}`}} />
+                  </div>
+                  <button onClick={handleApplyCoupon} disabled={!couponInput.trim()} style={{padding:"12px 20px",background:couponResult?.valid?"#10b981":"linear-gradient(135deg,#6366f1,#8b5cf6)",color:"white",border:"none",borderRadius:12,fontWeight:700,fontSize:13,cursor:couponInput.trim()?"pointer":"not-allowed",fontFamily:"'Sora',sans-serif",opacity:couponInput.trim()?1:0.6}}>Apply</button>
+                </div>
+                {couponResult&&(
+                  <div style={{padding:"8px 12px",background:couponResult.valid?"#f0fdf4":"#fef2f2",border:`1px solid ${couponResult.valid?"#86efac":"#fca5a5"}`,borderRadius:8,fontSize:13,display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+                    <span>{couponResult.valid?"✅":"❌"}</span>
+                    <span style={{color:couponResult.valid?"#065f46":"#991b1b",fontWeight:600}}>
+                      {couponResult.valid?`Coupon applied — ₹${couponResult.discount} off your order`:couponResult.error}
+                    </span>
+                    {couponResult.valid&&<button onClick={()=>{setCouponResult(null);setCouponInput("");}} style={{marginLeft:"auto",background:"none",border:"none",color:"#94a3b8",cursor:"pointer",fontSize:14}}>✕</button>}
+                  </div>
+                )}
+
+                {/* Referral code */}
+                <div style={{display:"flex",gap:8,marginBottom:8}}>
+                  <div style={{position:"relative",flex:1}}>
+                    <span style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",fontSize:14}}>🔗</span>
+                    <input className="cpp-input" value={referralInput} onChange={e=>setReferralInput(e.target.value.toUpperCase())} placeholder="Friend's referral code (e.g. RAHUL1234)" style={{paddingLeft:36,fontFamily:"monospace",fontWeight:700,letterSpacing:1,border:`2px solid ${referralResult?.valid?"#10b981":referralResult?.error?"#ef4444":"rgba(148,163,184,0.3)"}`}} />
+                  </div>
+                  <button onClick={handleApplyReferral} disabled={!referralInput.trim()} style={{padding:"12px 20px",background:referralResult?.valid?"#10b981":"linear-gradient(135deg,#f59e0b,#d97706)",color:"white",border:"none",borderRadius:12,fontWeight:700,fontSize:13,cursor:referralInput.trim()?"pointer":"not-allowed",fontFamily:"'Sora',sans-serif",opacity:referralInput.trim()?1:0.6}}>Apply</button>
+                </div>
+                {referralResult&&(
+                  <div style={{padding:"8px 12px",background:referralResult.valid?"#f0fdf4":"#fef2f2",border:`1px solid ${referralResult.valid?"#86efac":"#fca5a5"}`,borderRadius:8,fontSize:13,display:"flex",alignItems:"center",gap:8}}>
+                    <span>{referralResult.valid?"🎁":"❌"}</span>
+                    <span style={{color:referralResult.valid?"#065f46":"#991b1b",fontWeight:600}}>
+                      {referralResult.valid?`Referral applied — ₹${referralResult.discount} off! You and your friend both benefit 🎉`:referralResult.error}
+                    </span>
+                    {referralResult.valid&&<button onClick={()=>{setReferralResult(null);setReferralInput("");}} style={{marginLeft:"auto",background:"none",border:"none",color:"#94a3b8",cursor:"pointer",fontSize:14}}>✕</button>}
+                  </div>
+                )}
+              </div>
               <div style={{display:"flex",justifyContent:"space-between",marginTop:8}}>
                 <button className="cpp-btn-ghost" onClick={()=>goTo(4)}>← Back</button>
                 <button className="cpp-btn-primary" onClick={()=>goTo(6)} disabled={!step5Ok}>Continue → Review</button>
