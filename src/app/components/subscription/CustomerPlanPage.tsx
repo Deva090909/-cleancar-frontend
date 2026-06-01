@@ -271,7 +271,7 @@ function CostPanel({step,activeCat,vehicleCategories,selectedPlan,planMode,selec
         <div style={{fontSize:11,color:"rgba(199,210,254,0.7)",letterSpacing:2,textTransform:"uppercase",marginBottom:6,fontWeight:600}}>Order Summary</div>
         <div key={grandTotal} className={priceChanged?"cpp-price-change":""} style={{fontSize:36,fontWeight:800,color:"white",fontFamily:"'Playfair Display',serif",lineHeight:1}}>
           {inr(grandTotal>0?grandTotal:0)}
-          {planMode==="monthly" && <span style={{fontSize:14,fontWeight:400,opacity:0.6,fontFamily:"'Sora',sans-serif"}}>{commitMonths>1?` total (${commitMonths} mo)`:"/month"}</span>}{planMode==="pack" && <span style={{fontSize:14,fontWeight:400,opacity:0.6,fontFamily:"'Sora',sans-serif"}}>{isOneTime?" (1 visit)":selectedPack==="pack2"?" (2 visits)":selectedPack==="pack4"?" (4 visits)":""}</span>}
+          {planMode==="monthly" && <span style={{fontSize:14,fontWeight:400,opacity:0.6,fontFamily:"'Sora',sans-serif"}}>{commitMonths>1?` total (${commitMonths} mo)`:"/month"}</span>}{planMode==="pack" && <span style={{fontSize:14,fontWeight:400,opacity:0.6,fontFamily:"'Sora',sans-serif"}}>{selectedPack==="onetime"?" (1 visit)":selectedPack==="pack2"?" (2 visits)":selectedPack==="pack4"?" (4 visits)":""}</span>}
         </div>
         {discountAmt>0 && (
           <div style={{marginTop:8,display:"inline-flex",alignItems:"center",gap:6,background:"rgba(16,185,129,0.2)",border:"1px solid rgba(16,185,129,0.3)",borderRadius:20,padding:"4px 10px"}}>
