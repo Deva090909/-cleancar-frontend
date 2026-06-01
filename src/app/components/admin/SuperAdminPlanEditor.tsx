@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from "react";
 /**
  * SuperAdminPlanEditor.tsx
  * Full editor for the customer-facing plan page.
@@ -27,6 +28,7 @@ import { toast } from "sonner";
 import { useRole } from "../../contexts/RoleContext";
 import { DEFAULT_CONFIG, type PlanPageConfig, type MonthlyPlanConfig, type AddonConfig, type PackConfig } from "../subscription/CustomerPlanPage";
 import { BackButton } from "../ui/back-button";
+import { planSyncService } from "../../services/planSyncService";
 
 const STORAGE_KEY = "cleancar_plan_page_config";
 
@@ -125,7 +127,7 @@ function AddModelRow({ categories, onAdd }: {
 export function SuperAdminPlanEditor() {
   const { currentRole } = useRole();
   const [cfg, setCfg] = useState<PlanPageConfig>(loadConfig);
-  const [activeTab, setActiveTab] = useState<"editor" | "preview">("editor");
+  const [activeTab, setActiveTab] = useState<"editor" | "preview" | "coupons" | "promotions" | "referral" | "sync">("editor");
   const [isDirty, setIsDirty] = useState(false);
 
   // Guard: Super Admin only
@@ -641,6 +643,210 @@ export function SuperAdminPlanEditor() {
             </div>
           )}
         </div>
+      </div>
+
+      {/* COUPONS TAB */}
+      {activeTab === "coupons" && (
+        <div style={{ padding: "24px" }}>
+          <CouponManagementTab monthlyPlans={[{id:"water",name:"Express Wash"},{id:"shampoo",name:"Smart Wash"},{id:"wax",name:"Elite Wash"}]} />
+        </div>
+      )}
+
+      {/* PROMOTIONS TAB */}
+      {activeTab === "promotions" && (
+        <div style={{ padding: "24px" }}>
+          <PromotionsTab monthlyPlans={[{id:"water",name:"Express Wash"},{id:"shampoo",name:"Smart Wash"},{id:"wax",name:"Elite Wash"}]} />
+        </div>
+      )}
+
+      {/* REFERRAL TAB */}
+      {activeTab === "referral" && (
+        <div style={{ padding: "24px" }}>
+          <ReferralTab />
+        </div>
+      )}
+
+      {/* PLAN SYNC STATUS TAB */}
+      {activeTab === "sync" && (
+        <div style={{ padding: "24px" }}>
+          <PlanSyncStatus />
+        </div>
+      )}
+
+
+    </div>
+  );
+}
+
+// ─── INJECTED TAB COMPONENTS ─────────────────────────────────────────────────
+// Coupon, Promotion, Referral, PlanSync tabs
+import type { CouponCode, Promotion, ReferralProgram, ReferralRecord } from "../../services/planSyncService";
+
+function CouponManagementTab({ monthlyPlans }: { monthlyPlans: { id: string; name: string }[] }) {
+  const [coupons, setCoupons] = React.useState<CouponCode[]>(() => planSyncService.getCoupons());
+  const [showForm, setShowForm] = React.useState(false);
+  const [form, setForm] = React.useState({ code:"", type:"percent" as "percent"|"flat", value:10, minOrderValue:0, maxUses:0, validFrom:"", validTo:"", applicablePlans:[] as string[], active:true, description:"", createdBy:"Admin" });
+  const today = new Date().toISOString().slice(0,10);
+  const reload = () => setCoupons(planSyncService.getCoupons());
+
+  return (
+    <div>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20 }}>
+        <div><h3 style={{ margin:0, fontSize:18, fontWeight:700, color:"#0f172a" }}>🎟️ Coupon Codes</h3><p style={{ margin:"4px 0 0", fontSize:13, color:"#64748b" }}>{coupons.length} coupons · {coupons.filter(c=>c.active).length} active</p></div>
+        <button onClick={()=>setShowForm(!showForm)} style={{ padding:"10px 20px", background:"linear-gradient(135deg,#10b981,#059669)", color:"white", border:"none", borderRadius:10, fontWeight:700, fontSize:13, cursor:"pointer" }}>+ New Coupon</button>
+      </div>
+      {showForm && (
+        <div style={{ background:"#f0fdf4", borderRadius:14, padding:20, marginBottom:20, border:"2px solid #86efac" }}>
+          <h4 style={{ margin:"0 0 14px", color:"#065f46" }}>Create Coupon</h4>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:10, marginBottom:10 }}>
+            {[["Code *","code","SAVE20","text"],["Description","description","e.g. Welcome offer","text"],["Min Order ₹","minOrderValue","500","number"],["Max Uses (0=∞)","maxUses","100","number"],["Valid From","validFrom","","date"],["Valid To","validTo","","date"]] .map(([lbl,k,ph,tp]: any)=>(
+              <div key={k}><label style={{ display:"block",fontSize:12,fontWeight:600,color:"#374151",marginBottom:4 }}>{lbl}</label>
+              <input type={tp} value={(form as any)[k]} onChange={e=>setForm(p=>({...p,[k]:tp==="number"?Number(e.target.value):e.target.value}))} placeholder={ph} style={{ width:"100%",padding:"9px 12px",border:"1.5px solid #d1fae5",borderRadius:8,fontSize:13,fontFamily:"inherit",outline:"none" }} /></div>
+            ))}
+          </div>
+          <div style={{ display:"flex",gap:10,marginBottom:10 }}>
+            <div style={{ flex:1 }}><label style={{ display:"block",fontSize:12,fontWeight:600,color:"#374151",marginBottom:4 }}>Type</label><select value={form.type} onChange={e=>setForm(p=>({...p,type:e.target.value as any}))} style={{ width:"100%",padding:"9px 12px",border:"1.5px solid #d1fae5",borderRadius:8,fontSize:13,fontFamily:"inherit" }}><option value="percent">% off</option><option value="flat">₹ flat off</option></select></div>
+            <div style={{ flex:1 }}><label style={{ display:"block",fontSize:12,fontWeight:600,color:"#374151",marginBottom:4 }}>Value</label><input type="number" value={form.value} onChange={e=>setForm(p=>({...p,value:Number(e.target.value)}))} style={{ width:"100%",padding:"9px 12px",border:"1.5px solid #d1fae5",borderRadius:8,fontSize:13,fontFamily:"inherit",outline:"none" }} /></div>
+          </div>
+          <div style={{ display:"flex",gap:10 }}>
+            <button onClick={()=>{ if(!form.code.trim()){toast.error("Code required");return;} planSyncService.addCoupon({...form,code:form.code.toUpperCase()}); toast.success("Coupon created"); setShowForm(false); reload(); }} style={{ padding:"10px 24px",background:"#10b981",color:"white",border:"none",borderRadius:8,fontWeight:700,cursor:"pointer",fontSize:13 }}>Create</button>
+            <button onClick={()=>setShowForm(false)} style={{ padding:"10px 18px",background:"#f1f5f9",color:"#475569",border:"none",borderRadius:8,cursor:"pointer",fontSize:13 }}>Cancel</button>
+          </div>
+        </div>
+      )}
+      <div style={{ display:"grid",gap:8 }}>
+        {coupons.length===0&&<div style={{ textAlign:"center",padding:40,color:"#94a3b8",background:"#f8fafc",borderRadius:12,fontSize:14 }}>No coupons yet. Create your first one above.</div>}
+        {coupons.map(c=>{ const exp=c.validTo&&today>c.validTo; return(
+          <div key={c.id} style={{ background:"white",border:`2px solid ${c.active&&!exp?"#d1fae5":"#f1f5f9"}`,borderRadius:12,padding:"12px 16px",display:"flex",alignItems:"center",gap:14 }}>
+            <div style={{ padding:"7px 14px",background:`linear-gradient(135deg,${c.active&&!exp?"#10b981":"#94a3b8"},${c.active&&!exp?"#059669":"#cbd5e1"})`,color:"white",borderRadius:10,fontWeight:800,fontSize:14,letterSpacing:1,minWidth:100,textAlign:"center",fontFamily:"monospace" }}>{c.code}</div>
+            <div style={{ flex:1 }}><div style={{ fontWeight:700,color:"#0f172a",fontSize:14 }}>{c.type==="percent"?`${c.value}% off`:`₹${c.value} off`}{c.description&&<span style={{ fontWeight:400,color:"#64748b",marginLeft:8 }}>· {c.description}</span>}</div><div style={{ fontSize:12,color:"#94a3b8",marginTop:2 }}>{c.maxUses>0?`${c.usedCount}/${c.maxUses} used`:`${c.usedCount} used`}{c.validTo&&` · Expires ${c.validTo}`}{c.minOrderValue>0&&` · Min ₹${c.minOrderValue}`}</div></div>
+            <div style={{ display:"flex",gap:8,flexShrink:0 }}>
+              {exp&&<span style={{ fontSize:11,background:"#fef2f2",color:"#ef4444",padding:"3px 8px",borderRadius:6,fontWeight:600 }}>EXPIRED</span>}
+              {!exp&&c.active&&<span style={{ fontSize:11,background:"#f0fdf4",color:"#10b981",padding:"3px 8px",borderRadius:6,fontWeight:600 }}>ACTIVE</span>}
+              <button onClick={()=>{planSyncService.updateCoupon(c.id,{active:!c.active});reload();}} style={{ padding:"5px 12px",background:c.active?"#fef2f2":"#f0fdf4",color:c.active?"#ef4444":"#10b981",border:"none",borderRadius:6,cursor:"pointer",fontSize:12,fontWeight:600 }}>{c.active?"Disable":"Enable"}</button>
+              <button onClick={()=>{planSyncService.deleteCoupon(c.id);reload();}} style={{ padding:"5px 10px",background:"#fef2f2",color:"#ef4444",border:"none",borderRadius:6,cursor:"pointer",fontSize:12 }}>🗑</button>
+            </div>
+          </div>
+        );})}
+      </div>
+    </div>
+  );
+}
+
+function PromotionsTab({ monthlyPlans }: { monthlyPlans: { id: string; name: string }[] }) {
+  const [promos, setPromos] = React.useState<Promotion[]>(() => planSyncService.getPromotions());
+  const [showForm, setShowForm] = React.useState(false);
+  const [form, setForm] = React.useState({ name:"",description:"",type:"percent" as any,value:10,applicablePlans:[] as string[],startDate:"",endDate:"",active:true,autoApply:false,badge:"🎉",createdBy:"Admin" });
+  const today = new Date().toISOString().slice(0,10);
+  const reload = () => setPromos(planSyncService.getPromotions());
+  return (
+    <div>
+      <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20 }}>
+        <div><h3 style={{ margin:0,fontSize:18,fontWeight:700,color:"#0f172a" }}>🔥 Offers & Promotions</h3><p style={{ margin:"4px 0 0",fontSize:13,color:"#64748b" }}>{promos.filter(p=>p.active&&today>=p.startDate&&today<=p.endDate).length} currently live</p></div>
+        <button onClick={()=>setShowForm(!showForm)} style={{ padding:"10px 20px",background:"linear-gradient(135deg,#f59e0b,#d97706)",color:"white",border:"none",borderRadius:10,fontWeight:700,fontSize:13,cursor:"pointer" }}>+ New Promotion</button>
+      </div>
+      {showForm&&(
+        <div style={{ background:"#fffbeb",borderRadius:14,padding:20,marginBottom:20,border:"2px solid #fcd34d" }}>
+          <h4 style={{ margin:"0 0 12px",color:"#92400e" }}>Create Promotion</h4>
+          <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10 }}>
+            {[["Name *","name","Diwali Special"],["Badge","badge","🎄"],["Description","description","Shown on buy page"],["Type — Value (e.g. 20 for 20%/₹200)","","",""]] .slice(0,3).map(([lbl,k,ph]: any)=>(<div key={k}><label style={{ display:"block",fontSize:12,fontWeight:600,color:"#374151",marginBottom:4 }}>{lbl}</label><input value={(form as any)[k]} onChange={e=>setForm(p=>({...p,[k]:e.target.value}))} placeholder={ph} style={{ width:"100%",padding:"9px 12px",border:"1.5px solid #fde68a",borderRadius:8,fontSize:13,fontFamily:"inherit",outline:"none" }} /></div>))}
+            <div><label style={{ display:"block",fontSize:12,fontWeight:600,color:"#374151",marginBottom:4 }}>Type</label><select value={form.type} onChange={e=>setForm(p=>({...p,type:e.target.value}))} style={{ width:"100%",padding:"9px 12px",border:"1.5px solid #fde68a",borderRadius:8,fontSize:13,fontFamily:"inherit" }}><option value="percent">% Discount</option><option value="flat">₹ Flat Off</option><option value="bogo">Buy 1 Get 1</option></select></div>
+            <div><label style={{ display:"block",fontSize:12,fontWeight:600,color:"#374151",marginBottom:4 }}>Value</label><input type="number" value={form.value} onChange={e=>setForm(p=>({...p,value:Number(e.target.value)}))} style={{ width:"100%",padding:"9px 12px",border:"1.5px solid #fde68a",borderRadius:8,fontSize:13,fontFamily:"inherit",outline:"none" }} /></div>
+            <div><label style={{ display:"block",fontSize:12,fontWeight:600,color:"#374151",marginBottom:4 }}>Start</label><input type="date" value={form.startDate} onChange={e=>setForm(p=>({...p,startDate:e.target.value}))} style={{ width:"100%",padding:"9px 12px",border:"1.5px solid #fde68a",borderRadius:8,fontSize:13,fontFamily:"inherit",outline:"none" }} /></div>
+            <div><label style={{ display:"block",fontSize:12,fontWeight:600,color:"#374151",marginBottom:4 }}>End</label><input type="date" value={form.endDate} onChange={e=>setForm(p=>({...p,endDate:e.target.value}))} style={{ width:"100%",padding:"9px 12px",border:"1.5px solid #fde68a",borderRadius:8,fontSize:13,fontFamily:"inherit",outline:"none" }} /></div>
+          </div>
+          <div style={{ display:"flex",gap:20,marginBottom:10 }}>
+            <label style={{ display:"flex",alignItems:"center",gap:6,cursor:"pointer",fontSize:13,fontWeight:600 }}><input type="checkbox" checked={form.autoApply} onChange={e=>setForm(p=>({...p,autoApply:e.target.checked}))} />Auto-apply (banner on buy page)</label>
+            <label style={{ display:"flex",alignItems:"center",gap:6,cursor:"pointer",fontSize:13,fontWeight:600 }}><input type="checkbox" checked={form.active} onChange={e=>setForm(p=>({...p,active:e.target.checked}))} />Active</label>
+          </div>
+          <div style={{ display:"flex",gap:10 }}>
+            <button onClick={()=>{ if(!form.name.trim()){toast.error("Name required");return;} planSyncService.addPromotion(form); toast.success("Promotion created"); setShowForm(false); reload(); }} style={{ padding:"10px 24px",background:"#f59e0b",color:"white",border:"none",borderRadius:8,fontWeight:700,cursor:"pointer",fontSize:13 }}>Create</button>
+            <button onClick={()=>setShowForm(false)} style={{ padding:"10px 18px",background:"#f1f5f9",color:"#475569",border:"none",borderRadius:8,cursor:"pointer",fontSize:13 }}>Cancel</button>
+          </div>
+        </div>
+      )}
+      <div style={{ display:"grid",gap:8 }}>
+        {promos.length===0&&<div style={{ textAlign:"center",padding:40,color:"#94a3b8",background:"#f8fafc",borderRadius:12,fontSize:14 }}>No promotions yet.</div>}
+        {promos.map(p=>{ const live=p.active&&today>=p.startDate&&today<=p.endDate; return(
+          <div key={p.id} style={{ background:"white",border:`2px solid ${live?"#fcd34d":"#f1f5f9"}`,borderRadius:12,padding:"12px 16px",display:"flex",alignItems:"center",gap:14 }}>
+            <div style={{ fontSize:28,flexShrink:0 }}>{p.badge}</div>
+            <div style={{ flex:1 }}><div style={{ fontWeight:700,color:"#0f172a",fontSize:14 }}>{p.name}</div><div style={{ fontSize:12,color:"#64748b",marginTop:2 }}>{p.description}</div><div style={{ fontSize:11,color:"#94a3b8",marginTop:2 }}>{p.type==="percent"?`${p.value}% off`:p.type==="flat"?`₹${p.value} off`:"Buy 1 Get 1"} · {p.startDate} → {p.endDate}{p.autoApply?" · Auto-apply":""}</div></div>
+            <div style={{ display:"flex",gap:8,flexShrink:0 }}>
+              {live&&<span style={{ fontSize:11,background:"#fffbeb",color:"#d97706",padding:"3px 8px",borderRadius:6,fontWeight:600 }}>🔥 LIVE</span>}
+              <button onClick={()=>{planSyncService.updatePromotion(p.id,{active:!p.active});reload();}} style={{ padding:"5px 12px",background:p.active?"#fef2f2":"#f0fdf4",color:p.active?"#ef4444":"#10b981",border:"none",borderRadius:6,cursor:"pointer",fontSize:12,fontWeight:600 }}>{p.active?"Pause":"Resume"}</button>
+              <button onClick={()=>{planSyncService.deletePromotion(p.id);reload();}} style={{ padding:"5px 10px",background:"#fef2f2",color:"#ef4444",border:"none",borderRadius:6,cursor:"pointer",fontSize:12 }}>🗑</button>
+            </div>
+          </div>
+        );})}
+      </div>
+    </div>
+  );
+}
+
+function ReferralTab() {
+  const [prog, setProg] = React.useState<ReferralProgram>(() => planSyncService.getReferralProgram());
+  const [records] = React.useState<ReferralRecord[]>(() => planSyncService.getReferralRecords());
+  const stats = { total:records.length, converted:records.filter(r=>r.status==="converted").length, discounts:records.reduce((s,r)=>s+r.refereeDiscountAmount,0) };
+  return (
+    <div>
+      <div style={{ display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14,marginBottom:24 }}>
+        {[["🔗","Total Referrals",stats.total,"#6366f1","#eff6ff"],["✅","Converted",stats.converted,"#10b981","#f0fdf4"],["🎁","Discounts Given",`₹${stats.discounts.toLocaleString("en-IN")}` ,"#f59e0b","#fffbeb"]].map(([icon,lbl,val,color,bg]: any)=>(
+          <div key={lbl} style={{ background:bg,borderRadius:12,padding:"16px 18px",border:`1px solid ${color}30` }}><div style={{ fontSize:24,marginBottom:4 }}>{icon}</div><div style={{ fontSize:22,fontWeight:800,color }}>{val}</div><div style={{ fontSize:12,color:"#64748b" }}>{lbl}</div></div>
+        ))}
+      </div>
+      <div style={{ background:"white",border:"2px solid #e0e7ff",borderRadius:14,padding:20,marginBottom:20 }}>
+        <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16 }}>
+          <h4 style={{ margin:0,fontSize:16,fontWeight:700 }}>📣 Referral Program</h4>
+          <div onClick={()=>setProg(p=>({...p,enabled:!p.enabled}))} style={{ width:44,height:24,borderRadius:12,background:prog.enabled?"#10b981":"#e2e8f0",position:"relative",transition:"background 0.2s",cursor:"pointer" }}>
+            <div style={{ width:18,height:18,borderRadius:"50%",background:"white",position:"absolute",top:3,left:prog.enabled?22:3,transition:"left 0.2s",boxShadow:"0 1px 4px rgba(0,0,0,0.2)" }} />
+          </div>
+        </div>
+        <div style={{ background:"linear-gradient(135deg,#eff6ff,#f5f3ff)",borderRadius:10,padding:"12px 16px",marginBottom:14,fontSize:13,color:"#4338ca",lineHeight:1.6 }}>
+          👤 <strong>Referrer</strong> earns <strong>₹{prog.referrerReward}</strong> when friend subscribes &nbsp;·&nbsp;
+          🎁 <strong>Referee</strong> gets <strong>₹{prog.refereeDiscount} off</strong> first order
+        </div>
+        <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10 }}>
+          {[["Referrer Reward ₹","referrerReward"],["Referee Discount ₹","refereeDiscount"],["Min Order ₹","minRefereeOrderValue"],["Max Rewards/Person","maxRewardsPerReferrer"],["Validity (days)","rewardValidity"]].map(([lbl,k]: any)=>(
+            <div key={k}><label style={{ display:"block",fontSize:12,fontWeight:600,color:"#374151",marginBottom:4 }}>{lbl}</label><input type="number" value={(prog as any)[k]} onChange={e=>setProg(p=>({...p,[k]:Number(e.target.value)}))} style={{ width:"100%",padding:"9px 12px",border:"1.5px solid #e2e8f0",borderRadius:8,fontSize:13,fontFamily:"inherit",outline:"none" }} /></div>
+          ))}
+        </div>
+        <div style={{ marginTop:10 }}><label style={{ display:"block",fontSize:12,fontWeight:600,color:"#374151",marginBottom:4 }}>Terms shown to customers</label><textarea value={prog.termsText} onChange={e=>setProg(p=>({...p,termsText:e.target.value}))} rows={2} style={{ width:"100%",padding:"9px 12px",border:"1.5px solid #e2e8f0",borderRadius:8,fontSize:13,fontFamily:"inherit",outline:"none",resize:"vertical" }} /></div>
+        <button onClick={()=>{planSyncService.saveReferralProgram(prog);toast.success("Saved");}} style={{ marginTop:12,padding:"10px 24px",background:"linear-gradient(135deg,#6366f1,#8b5cf6)",color:"white",border:"none",borderRadius:8,fontWeight:700,cursor:"pointer",fontSize:13 }}>Save Settings</button>
+      </div>
+      {records.length===0&&<div style={{ textAlign:"center",padding:32,color:"#94a3b8",background:"#f8fafc",borderRadius:12 }}>No referrals yet. Customers will generate codes from their profile.</div>}
+    </div>
+  );
+}
+
+function PlanSyncStatus() {
+  const livePrices = planSyncService.getAllPlanPrices();
+  return (
+    <div>
+      <h3 style={{ margin:"0 0 8px",fontSize:18,fontWeight:700,color:"#0f172a" }}>🔄 Single Source of Truth — Plan Prices</h3>
+      <p style={{ margin:"0 0 20px",fontSize:13,color:"#64748b" }}>These prices from the Plan Editor propagate to ALL parts of the system: Customer Buy Page, TSE App, TSM App, and Car Washer screen. Change a price above — it updates everywhere instantly.</p>
+      <div style={{ display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginBottom:16 }}>
+        {["","Hatchback","SUV / Sedan","Luxury"].map((h,i)=>(
+          <div key={i} style={{ padding:"10px 14px",background:i===0?"transparent":"linear-gradient(135deg,#1e1b4b,#312e81)",borderRadius:10,fontWeight:700,fontSize:13,color:i===0?"#64748b":"white",textAlign:"center" }}>{h}</div>
+        ))}
+        {livePrices.map(p=>(
+          <React.Fragment key={p.id}>
+            <div style={{ padding:"12px 14px",background:"linear-gradient(135deg,#f8fafc,white)",borderRadius:10,fontWeight:700,fontSize:14,color:"#0f172a",display:"flex",alignItems:"center",gap:8,border:"1px solid #e2e8f0" }}><span style={{ fontSize:18 }}>{p.icon}</span>{p.name}</div>
+            {[p.hatchback,p.suv,p.luxury].map((price,i)=>(
+              <div key={i} style={{ padding:"12px 14px",background:"linear-gradient(135deg,#eff6ff,#f5f3ff)",borderRadius:10,textAlign:"center",border:"1px solid #e0e7ff" }}>
+                <div style={{ fontSize:20,fontWeight:800,color:"#4338ca" }}>₹{price.toLocaleString("en-IN")}</div>
+                <div style={{ fontSize:10,color:"#94a3b8" }}>per month</div>
+              </div>
+            ))}
+          </React.Fragment>
+        ))}
+      </div>
+      <div style={{ display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:12 }}>
+        {[["Customer Buy Page","/#/buy","These prices show on the customer checkout page when they select a plan"],["TSE App","/#/tse-app","TSE sees these prices when pitching plans to leads during a call"],["TSM App","/#/tsm-app","TSM dashboards and team performance use these base prices"],["Car Washer Screen","/#/washer-core-screens","Service confirmation and job details show plan name and value"]].map(([name,path,desc])=>(
+          <div key={name} style={{ background:"white",border:"1.5px solid #e2e8f0",borderRadius:12,padding:"14px 16px",display:"flex",gap:12,alignItems:"flex-start" }}>
+            <div style={{ width:32,height:32,borderRadius:8,background:"linear-gradient(135deg,#10b981,#059669)",display:"flex",alignItems:"center",justifyContent:"center",color:"white",fontSize:16,flexShrink:0 }}>✅</div>
+            <div><div style={{ fontWeight:700,fontSize:14,color:"#0f172a" }}>{name}</div><div style={{ fontSize:12,color:"#64748b",marginTop:2 }}>{desc}</div></div>
+          </div>
+        ))}
       </div>
     </div>
   );
