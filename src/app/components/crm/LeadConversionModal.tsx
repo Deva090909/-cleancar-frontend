@@ -1,4 +1,5 @@
 import { incentiveV6, type IncentiveTerm } from "../../services/incentiveStructureV6";
+import { IncentiveApiService } from "../../services/IncentiveApiService";
 /**
  * LeadConversionModal - Payment-driven lead conversion
  * Enforces: Payment FIRST, then subscription details, then conversion
@@ -158,6 +159,30 @@ export function LeadConversionModal({ lead, open, onOpenChange, onSuccess }: Lea
       });
 
       if (result.success) {
+        // ── Create incentive record in Railway PostgreSQL ──────────────────
+        // This ensures TSE/SM/SH/TSM incentive trackers see this subscription.
+        // Runs in background so it does not block the UI.
+        const session = (() => {
+          try { return JSON.parse(localStorage.getItem("cc360_session") || "{}"); } catch { return {}; }
+        })();
+        IncentiveApiService.create({
+          subscriptionId: result.subscriptionId || lead.id + "_sub",
+          customerId: result.customerId || lead.id,
+          customerName: lead.name,
+          cityId: cityInfo?.id || "CITY-SURAT",
+          planType: selectedPackage,
+          vehicleCategory: lead.carType || "Hatchback / Compact Sedan",
+          monthlyAmount: finalPrice,
+          term: billingCycle === "Annual" ? 12 : billingCycle === "Quarterly" ? 3 : 1,
+          source: (lead.leadSource === "Digital" || lead.leadSource === "Social Media") ? "DIGITAL" : "BTL",
+          activationDate: startDate,
+          // Assign the logged-in employee as TSE if their role is TSE
+          tseId: session.role === "TSE" ? session.employeeId : undefined,
+          tseName: session.role === "TSE" ? session.employeeName : undefined,
+          // SM, SH, TSM fields — these come from the lead's assigned team
+          // They will be populated once team assignment is wired up
+        }).catch(e => console.warn("[LeadConversion] Incentive record creation failed (non-fatal):", e));
+
         toast.success("Lead Converted Successfully!", {
           description: `Customer created with ${result.jobsGenerated?.length || 0} jobs scheduled`,
           duration: 5000,
