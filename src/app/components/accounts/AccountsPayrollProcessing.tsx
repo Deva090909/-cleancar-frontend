@@ -213,11 +213,11 @@ export function AccountsPayrollProcessing() {
 
     // ── Journal 1: Salary expense accrual ───────────────────────────────────
     // DR Salaries & Wages (gross), CR Axis Bank (net), CR TDS Payable (if any)
-    const totalGross = snapshot.employees.reduce(
+    const totalGross = snapshot?.employees?.reduce(
       (sum, e) => sum + (e.basePay + (e.incentive ?? 0) + (e.complianceAdjustment ?? 0)),
       0
     );
-    const totalDeductions = snapshot.employees.reduce(
+    const totalDeductions = snapshot?.employees?.reduce(
       (sum, e) => sum + (e.deductions ?? 0),
       0
     );
@@ -268,7 +268,7 @@ export function AccountsPayrollProcessing() {
     // type "Salary" — this is what feeds CityComparison, BreakEvenAnalysis,
     // and UnitEconomicsDashboard cost breakdown with real labour cost.
     // We dispatch one event per employee so FinanceContext can track individually.
-    snapshot.employees.forEach(emp => {
+    snapshot?.employees?.forEach(emp => {
       window.dispatchEvent(new CustomEvent("payroll-approved", {
         detail: {
           employeeId:  emp.employeeId,
@@ -447,7 +447,7 @@ export function AccountsPayrollProcessing() {
                 </tr>
               </thead>
               <tbody>
-                {snapshot.employees.map((emp) => (
+                {snapshot?.employees?.map((emp) => (
                   <tr key={emp.snapshotId} className="border-b border-gray-100 hover:bg-gray-50">
                     <td className="py-3 px-4 text-sm text-gray-900">{emp.employeeName}</td>
                     <td className="py-3 px-4 text-sm text-gray-700">{emp.bankName || "N/A"}</td>
