@@ -23,6 +23,7 @@
 
 import React, { createContext, useContext, ReactNode, useMemo, useState, useEffect, useCallback } from "react";
 import { DataService } from "../services/DataService";
+import { PlanApiService } from "../services/PlanApiService";
 import type { PlanTier, Addon, ComboOffer as ComboOfferType } from "../types/subscriptionPlans.types";
 import { subscriptionPlansService } from "../services/subscriptionPlansService";
 import {
@@ -96,6 +97,31 @@ export function PlanDefinitionProvider({ children }: { children: ReactNode }) {
     window.addEventListener("cc360_plan_price_changed", reloadTiers);
     return () => window.removeEventListener("cc360_plan_price_changed", reloadTiers);
   }, [reloadTiers]);
+
+  // ── Load plan tiers from Railway PostgreSQL on mount ──────────────────────
+  // This is the single source of truth fix: API data overwrites localStorage
+  // so every device sees the same admin-edited prices.
+  // Falls back to localStorage silently if API is unreachable.
+  useEffect(() => {
+    let cancelled = false;
+    PlanApiService.getTiers().then(apiTiers => {
+      if (cancelled || apiTiers.length === 0) return;
+      // Map API tiers into the shape DataService expects, then save
+      DataService.setAll("PLAN_TIERS", apiTiers.map(t => ({
+        id: t.id,
+        name: t.name,
+        displayName: t.displayName,
+        vehicleCategoryId: t.vehicleCategory,
+        baseMonthlyPrice: t.baseMonthlyPrice,
+        costPerWash: t.costPerWash,
+        sortOrder: t.sortOrder,
+        washesPerMonth: 26,
+        isActive: t.isActive,
+      })));
+      if (!cancelled) reloadTiers();
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Build a merged pricingMatrix: start from CURRENT_PLAN_VERSION then overlay
   // any admin-edited prices stored in DataService
@@ -242,3 +268,4 @@ export function usePlanDefinitions() {
   }
   return context;
 }
+
