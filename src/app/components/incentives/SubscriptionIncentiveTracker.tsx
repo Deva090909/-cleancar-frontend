@@ -231,28 +231,16 @@ interface Props {
   role: IncentiveRole;
   employeeName?: string;
   showSHRolling?: boolean;   // for SH role
-  apiRecords?: any[];         // optional: pre-loaded records from IncentiveApiService
 }
 
 export function SubscriptionIncentiveTracker({
-  employeeId, role, employeeName, showSHRolling, apiRecords,
+  employeeId, role, employeeName, showSHRolling,
 }: Props) {
   const [summary, setSummary] = useState<RoleIncentiveSummary | null>(null);
   const [filter,  setFilter]  = useState<"ALL" | "ACTIVE" | "CANCELLED">("ALL");
   const [shRolling, setSHRolling] = useState<{ total: number } | null>(null);
 
   useEffect(() => {
-    // If API records are provided — inject into incentiveV6 store so all
-    // existing calculation logic (30/70 rule, exit payout etc.) works unchanged.
-    if (apiRecords && apiRecords.length > 0) {
-      // Merge API records into the V6 store without replacing local-only records
-      try {
-        const stored: any[] = JSON.parse(localStorage.getItem("cc360_incentive_records") || "[]");
-        const apiIds = new Set(apiRecords.map((r: any) => r.subscriptionId));
-        const merged = [...stored.filter((r: any) => !apiIds.has(r.subscriptionId)), ...apiRecords];
-        localStorage.setItem("cc360_incentive_records", JSON.stringify(merged));
-      } catch {}
-    }
     // Auto-process any overdue tranches first
     incentiveV6.autoProcessDueTranches(
       new Date().toISOString().split("T")[0]
