@@ -563,47 +563,135 @@ export function CustomerPlanPage() {
 
   // ── SUCCESS ──────────────────────────────────────────────────────────────
   if (step===7) {
-    const inv=generatedInvoice;
+    const inv = generatedInvoice;
     const custFirstName = inv?.customerName?.split(" ")[0] || "there";
     const planLine = inv?.items?.[0]?.name || "your plan";
-    const waMsg=encodeURIComponent(`Hi ${custFirstName}! \u{1F389}\n\nYour booking with *${cfg.brand.name}* is confirmed!\n\n\u{1F4CB} *Invoice:* ${inv?.invoiceNumber}\n\u{1F697} *Vehicle:* ${inv?.vehicleReg || ""}\n\u{1F4E6} *Plan:* ${planLine}\n\u{1F4B0} *Amount Paid:* \u20B9${(inv?.grandTotal??0).toLocaleString("en-IN")} (incl. GST)\n\u{1F4CD} *Address:* ${inv?.address}\n\n\u23F0 Service starts within *2 working days*.\n\u{1F4F8} You will receive before & after photos after every wash on this number.\n\nThank you for choosing *${cfg.brand.name}*! \u{1F697}\u2728\n\nFor queries call: ${cfg.brand.phone}`);
+    const isMonthly = planMode === "monthly";
+    const isPack = planMode === "pack" && selectedPack !== "onetime";
+    const isOneTimeBooked = planMode === "pack" && selectedPack === "onetime";
+    const packVisits = selectedPack === "pack2" ? 2 : selectedPack === "pack4" ? 4 : 1;
+    const packValidity = selectedPack === "pack2" ? 20 : selectedPack === "pack4" ? 30 : 0;
+    const commitLabel = commitment === "3month" ? "3-Month" : commitment === "6month" ? "6-Month" : commitment === "12month" ? "12-Month" : "";
+    const grandTotalRounded = Math.round(inv?.grandTotal ?? 0);
+
+    // ── Contextual headline & subtitle
+    const headline = isMonthly
+      ? `${commitLabel ? commitLabel + " " : ""}Subscription Confirmed!`
+      : isPack ? `Pack of ${packVisits} Activated!`
+      : "One-Time Wash Booked!";
+
+    const subheadline = isMonthly
+      ? `Your ${planLine} starts within 2 working days`
+      : isPack ? `Valid for ${packValidity} days · ${packVisits} visits to use`
+      : `Scheduled for ${oneTimeDate} at ${oneTimeHour}`;
+
+    const heroEmoji = isMonthly ? "🚗" : isPack ? "📦" : "🪣";
+    const heroBg = isMonthly ? "linear-gradient(135deg,#1e40af,#6366f1)"
+      : isPack ? "linear-gradient(135deg,#059669,#10b981)"
+      : "linear-gradient(135deg,#d97706,#f59e0b)";
+
+    // ── Contextual next steps
+    const nextSteps: {icon:string;title:string;detail:string;color:string}[] =
+      isMonthly ? [
+        {icon:"📲",title:"Receipt on WhatsApp",detail:"Invoice sent immediately to your number",color:"#25d366"},
+        {icon:"📞",title:"Confirmation call",detail:"Our team calls within 1 working day to confirm your time slot",color:"#6366f1"},
+        {icon:"🚗",title:"Service begins",detail:`Your washer starts within 2 working days at your preferred time: ${prefTime}`,color:"#f59e0b"},
+        {icon:"📸",title:"Before & after photos",detail:"WhatsApp photo after every wash. Ask for a re-wash within 24h if unsatisfied.",color:"#06b6d4"},
+        {icon:"🔄",title:"Auto-renewal",detail:`Renews ${commitLabel ? "after " + commitLabel.toLowerCase().replace("-","").trim() : "monthly"}. Cancel anytime with 7 days notice.`,color:"#8b5cf6"},
+      ] : isPack ? [
+        {icon:"📲",title:"Pack receipt on WhatsApp",detail:"Invoice and pack details sent immediately",color:"#25d366"},
+        {icon:"✅",title:`Pack of ${packVisits} is active`,detail:`Valid for ${packValidity} days from today. No rollover after expiry.`,color:"#10b981"},
+        {icon:"📅",title:"Book each visit",detail:"WhatsApp us at least 2 hours before your preferred time. One visit per day.",color:"#6366f1"},
+        {icon:"📸",title:"Photos after every visit",detail:"Before & after photos on WhatsApp when done",color:"#06b6d4"},
+        {icon:"⚠️",title:"Pack rules",detail:"One vehicle only. Mix wash types freely. Pack cannot be split or shared.",color:"#f59e0b"},
+      ] : [
+        {icon:"📲",title:"Booking confirmed on WhatsApp",detail:"Full details sent immediately to your number",color:"#25d366"},
+        {icon:"🚗",title:"Washer arrives",detail:`We'll be at your address on ${oneTimeDate} at ${oneTimeHour}`,color:"#6366f1"},
+        {icon:"📸",title:"Before & after photos",detail:"Photos sent on WhatsApp when the wash is complete",color:"#06b6d4"},
+        {icon:"🔄",title:"Free re-wash guarantee",detail:"Not satisfied? We redo it within 24 hours at no extra charge",color:"#10b981"},
+      ];
+
+    // ── WhatsApp message (contextual)
+    const waServiceLine = isMonthly
+      ? "\u23F0 Service starts within *2 working days* at your preferred time."
+      : isPack
+      ? `\u{1F4E6} Pack valid for *${packValidity} days*. WhatsApp us 2 hrs before each visit to book.`
+      : `\u{1F4C5} Washer arrives on *${oneTimeDate} at ${oneTimeHour}*.`;
+
+    const waMsg = encodeURIComponent(
+      `Hi ${custFirstName}! \u{1F389}\n\n`
+      + `Your booking with *${cfg.brand.name}* is confirmed!\n\n`
+      + `\u{1F4CB} *Invoice:* ${inv?.invoiceNumber}\n`
+      + `\u{1F697} *Vehicle:* ${inv?.vehicleReg || catLabel}\n`
+      + `\u{1F4E6} *Plan:* ${planLine}\n`
+      + `\u{1F4B0} *Amount Paid:* \u20B9${grandTotalRounded.toLocaleString("en-IN")} (incl. GST)\n`
+      + `\u{1F4CD} *Address:* ${inv?.address}\n\n`
+      + waServiceLine + `\n`
+      + `\u{1F4F8} Before & after photos after every wash.\n\n`
+      + `Thank you for choosing *${cfg.brand.name}*! \u{1F697}\u2728\n\n`
+      + `For queries: ${cfg.brand.phone}`
+    );
+
     return (
-      <div className="cpp-root" style={{minHeight:"100vh",background:"linear-gradient(135deg,#1e1b4b 0%,#312e81 30%,#1e40af 70%,#0369a1 100%)",display:"flex",alignItems:"center",justifyContent:"center",padding:"40px 20px",position:"relative",overflow:"hidden"}}>
+      <div className="cpp-root" style={{minHeight:"100vh",background:"linear-gradient(160deg,#0f172a,#1e1b4b 50%,#0c4a6e)",display:"flex",alignItems:"center",justifyContent:"center",padding:"32px 20px",position:"relative",overflow:"hidden"}}>
         <style>{GLOBAL_CSS}</style>
         {showConfetti && <Confetti />}
-        <div style={{position:"absolute",inset:0,background:"url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Ccircle cx='30' cy='30' r='20'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")"}} />
-        <div style={{maxWidth:520,width:"100%",background:"rgba(255,255,255,0.95)",backdropFilter:"blur(20px)",borderRadius:28,overflow:"hidden",boxShadow:"0 40px 80px rgba(0,0,0,0.3)"}}>
-          {/* Success hero */}
-          <div style={{background:"linear-gradient(135deg,#10b981,#059669)",padding:"40px 32px",textAlign:"center"}}>
-            <div style={{width:80,height:80,borderRadius:"50%",background:"rgba(255,255,255,0.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:40,margin:"0 auto 16px",border:"3px solid rgba(255,255,255,0.3)"}}>🎉</div>
-            <h1 style={{fontSize:28,fontWeight:800,color:"white",margin:"0 0 8px",fontFamily:"'Playfair Display',serif"}}>You're all set!</h1>
-            <p style={{color:"rgba(255,255,255,0.85)",fontSize:14,margin:0}}>Invoice {inv?.invoiceNumber}</p>
-            <div style={{fontSize:32,fontWeight:800,color:"white",marginTop:12,fontFamily:"'Playfair Display',serif"}}>₹{inv?.grandTotal?.toLocaleString("en-IN")}</div>
-            <div style={{fontSize:12,color:"rgba(255,255,255,0.7)"}}>incl. GST</div>
+        <div style={{position:"absolute",inset:0,opacity:0.04,backgroundImage:"radial-gradient(circle,#fff 1px,transparent 1px)",backgroundSize:"28px 28px"}} />
+
+        <div style={{maxWidth:560,width:"100%",borderRadius:24,overflow:"hidden",boxShadow:"0 40px 80px rgba(0,0,0,0.4)"}}>
+          {/* Hero band — colour changes per plan type */}
+          <div style={{background:heroBg,padding:"28px 24px",textAlign:"center"}}>
+            <div style={{width:68,height:68,borderRadius:"50%",background:"rgba(255,255,255,0.15)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:34,margin:"0 auto 12px",border:"2px solid rgba(255,255,255,0.3)"}}>{heroEmoji}</div>
+            <h1 style={{fontSize:22,fontWeight:800,color:"white",margin:"0 0 6px",fontFamily:"'Playfair Display',serif"}}>{headline}</h1>
+            <p style={{color:"rgba(255,255,255,0.82)",fontSize:13,margin:"0 0 16px"}}>{subheadline}</p>
+            {/* Key summary strip */}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
+              {[
+                {label:"Invoice",value:inv?.invoiceNumber},
+                {label:"Amount paid",value:`₹${grandTotalRounded.toLocaleString("en-IN")} incl. GST`},
+                {label:"Vehicle",value:inv?.vehicleReg||catLabel},
+                {label:isMonthly?(commitLabel?"Commitment":"Plan"):isPack?"Valid":"Date",value:isMonthly?(commitLabel||"Month-to-Month"):isPack?`${packValidity} days`:oneTimeDate},
+              ].map(({label,value})=>(
+                <div key={label} style={{background:"rgba(0,0,0,0.18)",borderRadius:8,padding:"7px 10px",textAlign:"left"}}>
+                  <div style={{fontSize:9,color:"rgba(255,255,255,0.5)",marginBottom:2,textTransform:"uppercase",letterSpacing:0.5}}>{label}</div>
+                  <div style={{fontSize:11,fontWeight:700,color:"white"}}>{value}</div>
+                </div>
+              ))}
+            </div>
           </div>
-          <div style={{padding:"28px 32px"}}>
-            {cfg.postPaymentSteps.map((s:string,i:number)=>(
-              <div key={i} style={{display:"flex",alignItems:"center",gap:14,padding:"12px 16px",background:i===0?"linear-gradient(135deg,#eff6ff,#f0fdf4)":"#f8fafc",borderRadius:12,marginBottom:10,border:`1px solid ${i===0?"#bfdbfe":"#f1f5f9"}`}}>
-                <div style={{width:30,height:30,borderRadius:"50%",background:`linear-gradient(135deg,${["#6366f1","#10b981","#f59e0b","#06b6d4"][i]},${["#8b5cf6","#059669","#d97706","#0284c7"][i]})`,color:"white",fontWeight:800,fontSize:13,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{i+1}</div>
-                <span style={{fontSize:13,color:"#1e293b",fontWeight:500}}>{s}</span>
+
+          {/* Next steps */}
+          <div style={{background:"rgba(255,255,255,0.97)",padding:"18px 22px"}}>
+            <div style={{fontSize:10,fontWeight:700,color:"#64748b",letterSpacing:1.2,textTransform:"uppercase",marginBottom:10}}>What happens next</div>
+            {nextSteps.map((st,i)=>(
+              <div key={i} style={{display:"flex",alignItems:"flex-start",gap:10,padding:"9px 12px",borderRadius:10,marginBottom:5,background:i===0?"linear-gradient(135deg,#f0fdf4,#dcfce7)":"#f8fafc",border:`1px solid ${i===0?"#86efac":"#f1f5f9"}`}}>
+                <div style={{width:30,height:30,borderRadius:"50%",background:st.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,flexShrink:0}}>{st.icon}</div>
+                <div>
+                  <div style={{fontSize:13,fontWeight:700,color:"#0f172a"}}>{st.title}</div>
+                  <div style={{fontSize:11,color:"#64748b",marginTop:2,lineHeight:1.4}}>{st.detail}</div>
+                </div>
               </div>
             ))}
-            <div style={{display:"flex",gap:12,marginTop:24,flexWrap:"wrap"}}>
+
+            {/* CTA buttons */}
+            <div style={{display:"flex",gap:10,marginTop:16,flexWrap:"wrap"}}>
               <a href={`https://wa.me/${cfg.brand.whatsappNumber}?text=${waMsg}`} target="_blank" rel="noreferrer"
-                style={{flex:1,padding:"13px 20px",background:"linear-gradient(135deg,#25d366,#128c7e)",color:"white",borderRadius:50,fontWeight:700,fontSize:13,textDecoration:"none",display:"flex",alignItems:"center",justifyContent:"center",gap:8,boxShadow:"0 6px 20px rgba(37,211,102,0.35)"}}>
+                style={{flex:1,padding:"12px 16px",background:"linear-gradient(135deg,#25d366,#128c7e)",color:"white",borderRadius:50,fontWeight:700,fontSize:13,textDecoration:"none",display:"flex",alignItems:"center",justifyContent:"center",gap:8,boxShadow:"0 6px 16px rgba(37,211,102,0.3)"}}>
                 📲 WhatsApp Receipt
               </a>
-              <button onClick={()=>{setStep(1);setCarModel("");setDetectedCat(null);setSelectedPlan(null);setAddons([]);setGeneratedInvoice(null);}}
-                style={{flex:1,padding:"13px 20px",background:"linear-gradient(135deg,#6366f1,#8b5cf6)",color:"white",borderRadius:50,fontWeight:700,fontSize:13,border:"none",cursor:"pointer",boxShadow:"0 6px 20px rgba(99,102,241,0.35)"}}>
-                Buy Another Plan
+              <button onClick={()=>{setStep(1);setCarModel("");setDetectedCat(null);setSelectedPlan(null);setSelectedPack(null);setAddons([]);setGeneratedInvoice(null);setCouponResult(null);setReferralResult(null);}}
+                style={{flex:1,padding:"12px 16px",background:"linear-gradient(135deg,#6366f1,#8b5cf6)",color:"white",borderRadius:50,fontWeight:700,fontSize:13,border:"none",cursor:"pointer",boxShadow:"0 6px 16px rgba(99,102,241,0.3)"}}>
+                {isOneTimeBooked?"Book Another Wash":"Buy Another Plan"}
               </button>
+            </div>
+            <div style={{textAlign:"center",marginTop:10,fontSize:11,color:"#94a3b8"}}>
+              Queries? Call <a href={`tel:${cfg.brand.phone}`} style={{color:"#6366f1",fontWeight:600,textDecoration:"none"}}>{cfg.brand.phone}</a>
             </div>
           </div>
         </div>
       </div>
     );
   }
-
   // ── PAGE BACKGROUND ───────────────────────────────────────────────────────
   return (
     <div ref={scrollRef} className="cpp-root" style={{minHeight:"100vh",background:"linear-gradient(160deg,#f0f4ff 0%,#faf5ff 35%,#f0fdff 70%,#fefce8 100%)"}}>
