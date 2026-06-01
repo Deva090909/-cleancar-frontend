@@ -433,19 +433,44 @@ class TeleSalesExecutiveService {
    * Get today's performance stats
    */
   getTodayStats(): TSEDailyStats {
+    // I-08 FIX: derive from live session data where possible
+    const leads = this._leadsCache ?? [];
+    const today = new Date().toISOString().split("T")[0];
+
+    // Count calls made today: leads where attemptCount > 0 and assigned today
+    // (Best proxy without a call log — exact count available once backend is wired)
+    const callsMadeToday = leads.reduce((s, l) => s + (l.attemptCount ?? 0), 0);
+
+    // Count conversions and revenue today (leads marked CONVERTED)
+    const convertedToday = leads.filter(l => l.status === "CONVERTED");
+    const conversionsToday = convertedToday.length;
+    const revenueToday = convertedToday.reduce((s, l) => s + (l.estimatedValue ?? 0), 0);
+
+    const callsMade = callsMadeToday > 0 ? callsMadeToday : 0;
+    const callsTarget = 100;
+    const conversionRate = callsMade > 0 ? (conversionsToday / callsMade) * 100 : 0;
+
+    // SLA breaches: URGENT leads where slaStatus is "BREACHED"
+    const slaBreaches = leads.filter(l => l.priority === "URGENT" && l.slaStatus === "BREACHED").length;
+
+    // CRM compliance: leads with outcome logged vs total attempted
+    const attempted = leads.filter(l => (l.attemptCount ?? 0) > 0).length;
+    const logged = leads.filter(l => l.status !== "NEW" && l.status !== "NOT_ANSWERED").length;
+    const crmComplianceRate = attempted > 0 ? Math.round((logged / attempted) * 100) : 100;
+
     return {
       todayDate: new Date(),
-      callsMade: 47,
-      callsTarget: 100,
-      conversions: 8,
-      conversionRate: 17.0, // 8/47 ≈ 17%
+      callsMade,
+      callsTarget,
+      conversions: conversionsToday,
+      conversionRate: parseFloat(conversionRate.toFixed(1)),
       conversionTarget: 18,
-      slaBreaches: 2,
-      crmComplianceRate: 100,
-      revenueGenerated: 15992, // 8 conversions × avg ₹1999
-      avgCallDuration: 285, // 4 minutes 45 seconds
-      leadsInQueue: 23,
-      urgentLeads: 1,
+      slaBreaches,
+      crmComplianceRate,
+      revenueGenerated: revenueToday,
+      avgCallDuration: 285,
+      leadsInQueue: leads.filter(l => l.status === "NEW" || l.status === "CALLBACK").length,
+      urgentLeads: leads.filter(l => l.priority === "URGENT").length,
     };
   }
 
@@ -454,50 +479,137 @@ class TeleSalesExecutiveService {
   // ============================================
 
   /**
-   * Get month-to-date incentive breakdown
+   * Get month-to-date incentive breakdown.
+   *
+   * I-02 FIX: uses V6 pool-based system as canonical calculation.
+   *           COMMISSION_TIERS model removed — was a parallel system producing different numbers.
+   * I-03 FIX: reads from _leadsCache (session) instead of hardcoded ₹1.875L revenue.
+   * I-04 FIX: enforces GATE_CLOSURES (≥10) — variable pay locked if gate not met.
+   * I-05 FIX: computes PLAN_MIX_BONUS (₹500 when ≥60% deals are PROTECT/ELITE).
+   * I-06 FIX: computes SLA_BONUS (₹500 when all URGENT leads handled within SLA).
+   * I-07 FIX: applies CRM_PENALTY_PCT (-20%) when CRM compliance < 100%.
    */
   getIncentiveBreakdown(): TSEIncentives {
-    const mtdRevenue = 187500; // ₹1.875 lakh
+    const leads = this._leadsCache ?? [];
 
-    // Determine commission tier
-    const tier = COMMISSION_TIERS.find(
-      (t) => mtdRevenue >= t.min && mtdRevenue < t.max
-    ) || COMMISSION_TIERS[0];
+    // ── Derive live MTD metrics from session leads ─────────────────────────
+    const converted = leads.filter(l => l.status === "CONVERTED");
+    const mtdRevenue = converted.reduce((s, l) => s + (l.estimatedValue ?? 0), 0);
+    const totalConversions = converted.length;
 
-    const commissionEarned = Math.round((mtdRevenue * tier.rate) / 100);
+    const attempted = leads.filter(l => (l.attemptCount ?? 0) > 0).length;
+    const callsMtd = leads.reduce((s, l) => s + (l.attemptCount ?? 0), 0);
+    const conversionRate = attempted > 0 ? (totalConversions / attempted) * 100 : 0;
+
+    // CRM compliance: leads updated vs attempted (I-07)
+    const crmLogged = leads.filter(l => l.status !== "NEW" && l.status !== "NOT_ANSWERED").length;
+    const crmComplianceRate = attempted > 0 ? Math.round((crmLogged / attempted) * 100) : 100;
+
+    // ── Canonical V6 pool commission (I-02) ───────────────────────────────
+    // Each conversion earns based on plan + term pool split, tracked in incentiveV6.
+    // Until backend wires real pool records, estimate from POOL_TSE_SOURCED_3M per conversion.
+    // TSE earns TSE.POOL_TSE_SOURCED_3M = ₹79.50 per MONTHLY conversion (TSE-sourced, 3M split).
+    const TSE_POOL_PER_CONV = 79.50; // M1 tranche from TSE-sourced MONTHLY plan
+    const basePoolEarnings = Math.round(totalConversions * TSE_POOL_PER_CONV);
+
+    // ── Gate check (I-04) ─────────────────────────────────────────────────
+    const GATE_CLOSURES = 10; // TSE.GATE_CLOSURES
+    const gateMet = totalConversions >= GATE_CLOSURES;
+
+    // Variable pay is ₹0 if gate not met
+    let totalVariable = gateMet ? basePoolEarnings : 0;
+
+    // ── Plan mix bonus (I-05) ─────────────────────────────────────────────
+    // Proxy: deals with add-ons or bundles are more likely PROTECT/ELITE
+    const addOnAndBundleDeals = converted.filter(l =>
+      l.tags?.some(t => t.includes("Add-On") || t.includes("Bundle"))
+    ).length;
+    const planMixRate = totalConversions > 0 ? addOnAndBundleDeals / totalConversions : 0;
+    const PLAN_MIX_BONUS = 500; // TSE.PLAN_MIX_BONUS
+    const planMixBonusEarned = gateMet && planMixRate >= 0.60 ? PLAN_MIX_BONUS : 0;
+    if (planMixBonusEarned > 0) totalVariable += planMixBonusEarned;
+
+    // ── SLA bonus (I-06) ──────────────────────────────────────────────────
+    const urgentLeads = leads.filter(l => l.priority === "URGENT");
+    const urgentSlaBreaches = urgentLeads.filter(l => l.slaStatus === "BREACHED").length;
+    const SLA_BONUS = 500; // TSE.SLA_BONUS
+    const slaBonusEarned = gateMet && urgentLeads.length > 0 && urgentSlaBreaches === 0 ? SLA_BONUS : 0;
+    if (slaBonusEarned > 0) totalVariable += slaBonusEarned;
+
+    // ── CRM penalty (I-07) ────────────────────────────────────────────────
+    const CRM_PENALTY_PCT = 0.20; // TSE.CRM_PENALTY_PCT
+    const penaltyApplied = crmComplianceRate < 100;
+    if (penaltyApplied) totalVariable = Math.round(totalVariable * (1 - CRM_PENALTY_PCT));
+
+    // ── SHINE Hatchback token (I-09) ──────────────────────────────────────
+    // Count from leads tagged with SHINE+Hatchback+AddOn in session
+    const shineTokens = converted.filter(l =>
+      l.vehicleCategory?.toUpperCase().includes("HATCH") &&
+      (l.estimatedValue ?? 0) <= 1299 &&
+      l.tags?.some(t => t.toLowerCase().includes("add"))
+    ).length;
+    const SHINE_TOKEN = 10; // TSE.SHINE_H_TOKEN
+    const shineTokenEarned = shineTokens * SHINE_TOKEN;
+    if (shineTokenEarned > 0) totalVariable += shineTokenEarned;
+
+    // ── Deal type mix (kept for UI display) ───────────────────────────────
+    const baseDealsCount    = converted.filter(l => !l.tags?.length).length;
+    const addOnDealsCount   = converted.filter(l => l.tags?.some(t => t.includes("Add-On"))).length;
+    const bundleMidCount    = converted.filter(l => l.tags?.some(t => t.includes("Bundle MID"))).length;
+    const bundleLowCount    = converted.filter(l => l.tags?.some(t => t.includes("Bundle LOW"))).length;
+
+    // ── Renewal bonus ─────────────────────────────────────────────────────
+    const renewalCount = converted.filter(l => l.tags?.includes("Renewal")).length;
+    const RENEWAL_PER = RENEWAL_BONUS?.PER_RENEWAL ?? 50;
+    const renewalTotal = renewalCount * RENEWAL_PER;
+    if (renewalTotal > 0) totalVariable += renewalTotal;
 
     return {
       fixedSalary: FIXED_SALARY.TYPICAL,
       mtdPerformance: {
         revenueGenerated: mtdRevenue,
-        conversionRate: 17.2,
-        callsMade: 940,
-        callsTarget: 2000, // 100/day × 20 working days
+        conversionRate: parseFloat(conversionRate.toFixed(1)),
+        callsMade: callsMtd,
+        callsTarget: 2000,
       },
       commissionBreakdown: {
-        revenueTier: tier.tier,
-        tierThreshold: { min: tier.min, max: tier.max },
-        commissionRate: tier.rate,
-        commissionEarned,
+        // I-02: V6 pool-based — not COMMISSION_TIERS revenue-% model
+        revenueTier: "POOL_V6" as any,
+        tierThreshold: { min: GATE_CLOSURES, max: 999 },
+        commissionRate: TSE_POOL_PER_CONV, // ₹79.50 per conversion (M1 tranche)
+        commissionEarned: gateMet ? basePoolEarnings : 0,
       },
       dealTypeMix: {
-        baseDeals: { count: 28, multiplier: INCENTIVE_MULTIPLIERS.BASE_PRICE },
-        addOnDeals: { count: 42, multiplier: INCENTIVE_MULTIPLIERS.ADD_ON },
-        bundleMIDDeals: { count: 35, multiplier: INCENTIVE_MULTIPLIERS.BUNDLE_MID },
-        bundleLOWDeals: { count: 12, multiplier: INCENTIVE_MULTIPLIERS.BUNDLE_LOW },
+        baseDeals:      { count: baseDealsCount,  multiplier: INCENTIVE_MULTIPLIERS.BASE_PRICE  },
+        addOnDeals:     { count: addOnDealsCount,  multiplier: INCENTIVE_MULTIPLIERS.ADD_ON      },
+        bundleMIDDeals: { count: bundleMidCount,   multiplier: INCENTIVE_MULTIPLIERS.BUNDLE_MID  },
+        bundleLOWDeals: { count: bundleLowCount,   multiplier: INCENTIVE_MULTIPLIERS.BUNDLE_LOW  },
       },
       renewalBonus: {
-        count: 18,
-        bonusPerRenewal: RENEWAL_BONUS.PER_RENEWAL,
-        totalBonus: 18 * RENEWAL_BONUS.PER_RENEWAL,
+        count: renewalCount,
+        bonusPerRenewal: RENEWAL_PER,
+        totalBonus: renewalTotal,
       },
-      totalVariable: commissionEarned + (18 * RENEWAL_BONUS.PER_RENEWAL),
+      totalVariable,
       maxVariablePotential: 25000,
       eligibilityStatus: {
-        crmCompliance: 100,
-        ebitdaCompliant: true,
-        penaltyApplied: false,
+        crmCompliance: crmComplianceRate,
+        ebitdaCompliant: true, // EBITDA check done per-deal in ActiveCall, not here
+        penaltyApplied,
+        penaltyReason: penaltyApplied ? `CRM compliance ${crmComplianceRate}% < 100% — 20% variable penalty applied` : undefined,
       },
+      // Extended fields (surfaced in tracker UI)
+      _bonusBreakdown: {
+        gateMet,
+        gateRequired: GATE_CLOSURES,
+        totalConversions,
+        planMixBonusEarned,
+        planMixRate: parseFloat((planMixRate * 100).toFixed(1)),
+        slaBonusEarned,
+        urgentSlaBreaches,
+        shineTokenEarned,
+        shineTokenCount: shineTokens,
+      } as any,
     };
   }
 
