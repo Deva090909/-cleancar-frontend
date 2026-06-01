@@ -585,8 +585,9 @@ class IncentiveStructureV6Service {
   }
 
   // ── SH 1% rolling reward ────────────────────────────────────────────────────
-  getSHRolling(shId: string): { total: number; breakdown: { subscriptionId:string; customerName:string; planAmount:number; reward:number }[] } {
-    const subs = this.readSubs().filter(r => r.shId===shId && r.status==="ACTIVE");
+  getSHRolling(shId: string, month?: string): { total: number; breakdown: { subscriptionId:string; customerName:string; planAmount:number; reward:number }[] } {
+    // month = "YYYY-MM" — filters activations UP TO that month if provided
+    const subs = this.readSubs().filter(r => r.shId===shId && r.status==="ACTIVE" && (!month || r.activationDate.startsWith(month.slice(0,7)) || r.activationDate < month+"-32"));
     const bd   = subs.map(r => ({ subscriptionId:r.subscriptionId, customerName:r.customerName, planAmount:r.monthlyAmount, reward:Math.round(r.monthlyAmount*SH.ROLLING_PCT*100)/100 }));
     return { total: bd.reduce((s,b)=>s+b.reward,0), breakdown: bd };
   }
