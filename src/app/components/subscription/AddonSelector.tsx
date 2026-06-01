@@ -1,50 +1,45 @@
 /**
  * Add-on Selector Component
- *
- * Customer-facing UI for selecting add-on services with subscription plans.
- * Dynamically renders available add-ons based on selected plan tier.
- *
- * Features:
- * - Plan-aware recommendations (shows best-paired add-ons first)
- * - Toggle selection with price calculation
- * - Per-visit vs Per-month billing display
- * - Total add-on cost calculation
- * - Only shows operationally confirmed add-ons
- *
- * @component
+ * UI RESTYLED ONLY — all logic, state, hooks, service calls, and props unchanged
  */
 
 import { useState, useEffect } from "react";
-import { Card } from "../ui/card";
-import { Badge } from "../ui/badge";
-import { Button } from "../ui/button";
-import { Checkbox } from "../ui/checkbox";
 import { Check, Info, Sparkles } from "lucide-react";
 import { subscriptionPlansService } from "../../services/subscriptionPlansService";
 import type { Addon, PlanTierName } from "../../types/subscriptionPlans.types";
+
+// ── Icon colour per add-on category ─────────────────────────────────────────
+const ADDON_COLORS: Record<string, { bg: string; icon: string; selBorder: string; selBg: string }> = {
+  interior:  { bg: "#EEEDFE", icon: "#534AB7", selBorder: "#534AB7", selBg: "#F5F4FF" },
+  exterior:  { bg: "#E1F5EE", icon: "#0F6E56", selBorder: "#1D9E75", selBg: "#F0FDF8" },
+  engine:    { bg: "#FAEEDA", icon: "#854F0B", selBorder: "#BA7517", selBg: "#FFFAF0" },
+  default:   { bg: "#E6F1FB", icon: "#185FA5", selBorder: "#378ADD", selBg: "#F0F8FF" },
+};
+
+function addonColor(name: string) {
+  const n = name.toLowerCase();
+  if (n.includes("vacuum") || n.includes("interior") || n.includes("dash")) return ADDON_COLORS.interior;
+  if (n.includes("tyre") || n.includes("shampoo") || n.includes("wax") || n.includes("exterior") || n.includes("fragrance")) return ADDON_COLORS.exterior;
+  if (n.includes("engine")) return ADDON_COLORS.engine;
+  return ADDON_COLORS.default;
+}
 
 interface AddonSelectorProps {
   selectedPlanTier?: PlanTierName;
   onAddonsChange?: (selectedAddonIds: string[], totalCost: number) => void;
 }
 
-export function AddonSelector({
-  selectedPlanTier,
-  onAddonsChange,
-}: AddonSelectorProps) {
+export function AddonSelector({ selectedPlanTier, onAddonsChange }: AddonSelectorProps) {
+  // ── ALL STATE AND LOGIC IDENTICAL TO ORIGINAL ────────────────────────────
   const [allAddons, setAllAddons] = useState<Addon[]>([]);
   const [recommendedAddons, setRecommendedAddons] = useState<Addon[]>([]);
   const [selectedAddonIds, setSelectedAddonIds] = useState<string[]>([]);
 
   useEffect(() => {
-    // Load all active add-ons
-    const loadedAddons = subscriptionPlansService.getAddons(false); // Active only
+    const loadedAddons = subscriptionPlansService.getAddons(false);
     setAllAddons(loadedAddons);
-
-    // Get recommended add-ons for current plan
     if (selectedPlanTier) {
-      const recommended =
-        subscriptionPlansService.getRecommendedAddons(selectedPlanTier);
+      const recommended = subscriptionPlansService.getRecommendedAddons(selectedPlanTier);
       setRecommendedAddons(recommended);
     }
   }, [selectedPlanTier]);
@@ -54,18 +49,11 @@ export function AddonSelector({
       const newSelection = prev.includes(addonId)
         ? prev.filter((id) => id !== addonId)
         : [...prev, addonId];
-
-      // Calculate total cost
       const totalCost = newSelection.reduce((sum, id) => {
         const addon = allAddons.find((a) => a.id === id);
         return sum + (addon?.price || 0);
       }, 0);
-
-      // Notify parent
-      if (onAddonsChange) {
-        onAddonsChange(newSelection, totalCost);
-      }
-
+      if (onAddonsChange) onAddonsChange(newSelection, totalCost);
       return newSelection;
     });
   };
@@ -76,28 +64,29 @@ export function AddonSelector({
   }, 0);
 
   const recommendedIds = new Set(recommendedAddons.map((a) => a.id));
+  // ── END UNCHANGED LOGIC ──────────────────────────────────────────────────
 
   return (
     <div>
-      <div className="mb-6">
-        <h3 className="text-xl font-semibold text-gray-900 mb-2">
-          Enhance Your Plan with Add-ons
+      <div style={{ marginBottom: 24 }}>
+        <h3 style={{ fontSize: 20, fontWeight: 500, color: "#1a0533", marginBottom: 6 }}>
+          Enhance your plan with add-ons
         </h3>
-        <p className="text-sm text-gray-600">
+        <p style={{ fontSize: 13, color: "#6B7280" }}>
           Optional services you can add to your subscription
         </p>
       </div>
 
-      {/* Recommended Add-ons (if available) */}
+      {/* Recommended */}
       {recommendedAddons.length > 0 && (
-        <div className="mb-6">
-          <div className="flex items-center gap-2 mb-3">
-            <Sparkles className="w-4 h-4 text-purple-600" />
-            <h4 className="font-medium text-purple-900">
-              Recommended for Your Plan
-            </h4>
+        <div style={{ marginBottom: 28 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 12 }}>
+            <Sparkles size={16} color="#534AB7" />
+            <span style={{ fontSize: 13, fontWeight: 500, color: "#3C3489" }}>
+              Recommended for your plan
+            </span>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 10 }}>
             {recommendedAddons.map((addon) => (
               <AddonCard
                 key={addon.id}
@@ -111,11 +100,13 @@ export function AddonSelector({
         </div>
       )}
 
-      {/* All Other Add-ons */}
+      {/* Other add-ons */}
       {allAddons.filter((a) => !recommendedIds.has(a.id)).length > 0 && (
-        <div>
-          <h4 className="font-medium text-gray-900 mb-3">Other Add-ons</h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ fontSize: 13, fontWeight: 500, color: "#374151", marginBottom: 12 }}>
+            Other add-ons
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 10 }}>
             {allAddons
               .filter((a) => !recommendedIds.has(a.id))
               .map((addon) => (
@@ -131,47 +122,42 @@ export function AddonSelector({
         </div>
       )}
 
-      {/* Total Add-on Cost Summary */}
+      {/* Total — logic unchanged */}
       {selectedAddonIds.length > 0 && (
-        <Card className="mt-6 p-4 bg-blue-50 border-blue-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="font-medium text-blue-900">
-                Total Add-on Cost
-              </div>
-              <div className="text-sm text-blue-700">
-                {selectedAddonIds.length} add-on
-                {selectedAddonIds.length !== 1 ? "s" : ""} selected
-              </div>
-            </div>
-            <div className="text-2xl font-bold text-blue-900">
-              +{subscriptionPlansService.formatPrice(totalAddonCost)}
+        <div style={{ background: "#E1F5EE", border: "1px solid #9FE1CB", borderRadius: 12, padding: "14px 18px", display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 500, color: "#085041" }}>Total add-on cost</div>
+            <div style={{ fontSize: 12, color: "#0F6E56" }}>
+              {selectedAddonIds.length} add-on{selectedAddonIds.length !== 1 ? "s" : ""} selected
             </div>
           </div>
-        </Card>
-      )}
-
-      {/* Info Banner */}
-      <Card className="mt-6 p-4 bg-gray-50 border-gray-200">
-        <div className="flex items-start gap-3">
-          <Info className="w-5 h-5 text-gray-600 mt-0.5" />
-          <div className="text-sm text-gray-700">
-            <p className="font-medium mb-1">Add-on Billing</p>
-            <ul className="space-y-1 text-xs">
-              <li>• Per-visit add-ons are charged each time they're performed</li>
-              <li>• Per-month add-ons are a fixed monthly charge</li>
-              <li>• You can add or remove add-ons anytime after subscribing</li>
-            </ul>
+          <div style={{ fontSize: 22, fontWeight: 500, color: "#085041" }}>
+            +{subscriptionPlansService.formatPrice(totalAddonCost)}
           </div>
         </div>
-      </Card>
+      )}
+
+      {/* Info */}
+      <div style={{ background: "#F8F7FF", border: "1px solid #D3D1C7", borderRadius: 12, padding: "14px 18px", display: "flex", gap: 12 }}>
+        <Info size={18} color="#534AB7" style={{ flexShrink: 0, marginTop: 2 }} />
+        <div>
+          <div style={{ fontSize: 13, fontWeight: 500, color: "#3C3489", marginBottom: 6 }}>Add-on billing</div>
+          <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 4 }}>
+            {[
+              "Per-visit add-ons are charged each time they're performed",
+              "Per-month add-ons are a fixed monthly charge",
+              "You can add or remove add-ons anytime after subscribing",
+            ].map((item) => (
+              <li key={item} style={{ fontSize: 12, color: "#534AB7" }}>· {item}</li>
+            ))}
+          </ul>
+        </div>
+      </div>
     </div>
   );
 }
 
-// ============================================
-// ADDON CARD SUB-COMPONENT
-// ============================================
+// ── ADDON CARD — logic unchanged, only visual ────────────────────────────────
 
 interface AddonCardProps {
   addon: Addon;
@@ -180,68 +166,62 @@ interface AddonCardProps {
   isRecommended: boolean;
 }
 
-function AddonCard({
-  addon,
-  isSelected,
-  onToggle,
-  isRecommended,
-}: AddonCardProps) {
+function AddonCard({ addon, isSelected, onToggle, isRecommended }: AddonCardProps) {
+  const c = addonColor(addon.name);
+
   return (
-    <Card
-      className={`p-4 cursor-pointer transition-all ${
-        isSelected
-          ? "border-2 border-purple-500 bg-purple-50"
-          : isRecommended
-          ? "border-2 border-purple-200 bg-white hover:border-purple-300"
-          : "border border-gray-200 bg-white hover:border-gray-300"
-      }`}
+    <div
       onClick={onToggle}
-      role="button"
-      tabIndex={0}
+      role="button" tabIndex={0}
       aria-label={`${isSelected ? "Deselect" : "Select"} ${addon.name}`}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          onToggle();
-        }
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onToggle(); } }}
+      style={{
+        background: isSelected ? c.selBg : "#fff",
+        border: `2px solid ${isSelected ? c.selBorder : isRecommended ? c.selBorder + "55" : "#E5E7EB"}`,
+        borderRadius: 12, padding: "14px", cursor: "pointer",
+        transition: "border-color .15s, background .15s",
       }}
     >
-      <div className="flex items-start gap-3">
-        <div className="pt-0.5">
-          <Checkbox checked={isSelected} onCheckedChange={onToggle} />
+      <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+        {/* checkbox replacement */}
+        <div style={{
+          width: 22, height: 22, borderRadius: 6, flexShrink: 0, marginTop: 1,
+          background: isSelected ? c.selBorder : "#fff",
+          border: `2px solid ${isSelected ? c.selBorder : "#D1D5DB"}`,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          transition: "all .15s",
+        }}>
+          {isSelected && <Check size={13} color="#fff" />}
         </div>
-        <div className="flex-1">
-          <div className="flex items-start justify-between gap-2 mb-2">
+
+        <div style={{ flex: 1 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6, gap: 8 }}>
             <div>
-              <h5 className="font-semibold text-gray-900">{addon.name}</h5>
+              <div style={{ fontSize: 13, fontWeight: 500, color: "#1a0533" }}>{addon.name}</div>
               {isRecommended && (
-                <Badge className="mt-1 bg-purple-600 text-xs">
-                  <Sparkles className="w-3 h-3 mr-1" />
-                  Recommended
-                </Badge>
+                <div style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "#EEEDFE", color: "#534AB7", fontSize: 10, padding: "2px 8px", borderRadius: 20, marginTop: 3, fontWeight: 500 }}>
+                  <Sparkles size={9} /> Recommended
+                </div>
               )}
             </div>
-            <div className="text-right">
-              <div className="font-bold text-purple-700">
+            <div style={{ textAlign: "right", flexShrink: 0 }}>
+              <div style={{ fontSize: 14, fontWeight: 500, color: c.icon }}>
                 {subscriptionPlansService.formatPrice(addon.price)}
               </div>
-              <div className="text-xs text-gray-600">
+              <div style={{ fontSize: 11, color: "#9CA3AF" }}>
                 {addon.billingType === "PER_VISIT" ? "per visit" : "per month"}
               </div>
             </div>
           </div>
-          <p className="text-sm text-gray-600">{addon.description}</p>
+          <p style={{ fontSize: 12, color: "#6B7280", margin: 0 }}>{addon.description}</p>
         </div>
       </div>
 
       {isSelected && (
-        <div className="mt-3 pt-3 border-t border-purple-200">
-          <div className="flex items-center gap-2 text-sm text-purple-700">
-            <Check className="w-4 h-4" />
-            <span className="font-medium">Added to your plan</span>
-          </div>
+        <div style={{ marginTop: 10, paddingTop: 10, borderTop: `1px solid ${c.selBorder}33`, display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: c.icon, fontWeight: 500 }}>
+          <Check size={13} /> Added to your plan
         </div>
       )}
-    </Card>
+    </div>
   );
 }
