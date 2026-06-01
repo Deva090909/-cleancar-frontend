@@ -76,24 +76,42 @@ class PlanApiServiceClass {
   private addonsCache: ApiPlanAddon[] | null = null;
   private cacheTs = 0;
   private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+  private apiUnreachable = false;  // Set true after first failure — stops hammering
+  private lastFailTs = 0;
+  private readonly RETRY_AFTER = 10 * 60 * 1000; // Retry after 10 min
 
   private isCacheStale(): boolean {
     return Date.now() - this.cacheTs > this.CACHE_TTL;
+  }
+
+  private shouldSkipApi(): boolean {
+    if (!this.apiUnreachable) return false;
+    // Allow retry after 10 minutes
+    if (Date.now() - this.lastFailTs > this.RETRY_AFTER) {
+      this.apiUnreachable = false;
+      return false;
+    }
+    return true;
   }
 
   // ── TIERS ──────────────────────────────────────────────────────────────────
 
   async getTiers(): Promise<ApiPlanTier[]> {
     if (this.tiersCache && !this.isCacheStale()) return this.tiersCache;
+    if (this.shouldSkipApi()) return this.tiersCache || [];
     try {
-      const res = await fetch(`${BASE_URL}/plans/tiers`);
+      const res = await fetch(`${BASE_URL}/plans/tiers`, { signal: AbortSignal.timeout(4000) });
       if (!res.ok) throw new Error(`GET /plans/tiers failed: ${res.status}`);
       const data: ApiPlanTier[] = await res.json();
       this.tiersCache = data;
       this.cacheTs = Date.now();
+      this.apiUnreachable = false;
       return data;
     } catch (err) {
-      console.warn("[PlanApiService] Could not load tiers from API, using cache/fallback:", err);
+      this.apiUnreachable = true;
+      this.lastFailTs = Date.now();
+      // Silent fallback — only log once, not every render
+      if (!this.tiersCache) console.warn("[PlanApiService] API unavailable, using localStorage fallback");
       return this.tiersCache || [];
     }
   }
@@ -131,15 +149,18 @@ class PlanApiServiceClass {
 
   async getAddons(): Promise<ApiPlanAddon[]> {
     if (this.addonsCache && !this.isCacheStale()) return this.addonsCache;
+    if (this.shouldSkipApi()) return this.addonsCache || [];
     try {
-      const res = await fetch(`${BASE_URL}/plans/addons`);
+      const res = await fetch(`${BASE_URL}/plans/addons`, { signal: AbortSignal.timeout(4000) });
       if (!res.ok) throw new Error(`GET /plans/addons failed: ${res.status}`);
       const data: ApiPlanAddon[] = await res.json();
       this.addonsCache = data;
       this.cacheTs = Date.now();
       return data;
     } catch (err) {
-      console.warn("[PlanApiService] Could not load addons from API, using cache/fallback:", err);
+      this.apiUnreachable = true;
+      this.lastFailTs = Date.now();
+      if (!this.addonsCache) console.warn("[PlanApiService] API unavailable, using localStorage fallback");
       return this.addonsCache || [];
     }
   }
