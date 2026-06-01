@@ -17,7 +17,7 @@
  *   EMPLOYEE_DATABASE_RECORDS    (auth system)
  */
 
-const SEED_FLAG = "ALL_DATA_SEEDED_V8";
+const SEED_FLAG = "ALL_DATA_SEEDED_V7";
 
 // ─── Shared helpers ───────────────────────────────────────────────────────────
 const NOW   = new Date().toISOString();
@@ -798,7 +798,7 @@ export function seedAllData(): void {
     ["HISTORIC_DATA_SEEDED_V1","HISTORIC_DATA_SEEDED_V2","HISTORIC_DATA_SEEDED_V3",
      "HISTORIC_DATA_SEEDED_V4","HISTORIC_DATA_SEEDED_V5","ACC_SEED_V1","ACC_SEED_V2",
      "ALL_DATA_SEEDED_V1","ALL_DATA_SEEDED_V2","ALL_DATA_SEEDED_V3","ALL_DATA_SEEDED_V4",
-     "ALL_DATA_SEEDED_V5","ALL_DATA_SEEDED_V6","ALL_DATA_SEEDED_V7"
+     "ALL_DATA_SEEDED_V5","ALL_DATA_SEEDED_V6"
     ].forEach(f => localStorage.removeItem(f));
 
     // FIX: Set SEED_FLAG first — prevents infinite re-seed if quota hit mid-run
@@ -1540,6 +1540,399 @@ export function seedAllData(): void {
       ];
       localStorage.setItem("sm_alerts", JSON.stringify(SM_ALERTS_FULL));
     }
+
+    // ── 43. TSE INCENTIVE V6 SEED ─────────────────────────────────────────────
+    // Creates cleancar_incentive_v6_records so IncentivePayoutLedger and
+    // SubscriptionIncentiveTracker have real data to display for both Surat TSEs.
+    //
+    // Scenario designed to demonstrate every state in the tracker:
+    //   Pooja Sharma  (EDB-TSE-SUR1) — 28 conversions, gate met, plan mix ≥60%
+    //     • Mix of DIGITAL + BTL source leads, MONTHLY + QUARTERLY terms
+    //     • M1 tranches: some PAID (Feb/Mar subs), rest PENDING
+    //     • One FORFEITED (customer cancelled within 60 days)
+    //     • SHINE H token qualifying deals included
+    //
+    //   Ankit Trivedi (EDB-TSE-SUR2) — 8 conversions, gate NOT met (< 10)
+    //     • All PENDING — shows gate-locked state in tracker
+    //
+    //   Swati Parab   (EDB-TSE-MUM1) — 15 conversions, Mumbai city
+    //     • Mixed paid/pending
+    // ──────────────────────────────────────────────────────────────────────────
+    {
+      const INCENTIVE_KEY  = "cleancar_incentive_v6_records";
+      const ADDON_KEY      = "cleancar_incentive_v6_addons";
+
+      // Only seed if not already present
+      const existing = localStorage.getItem(INCENTIVE_KEY);
+      const existingParsed: any[] = existing ? JSON.parse(existing) : [];
+
+      // Don't re-seed if we already have V6 records for these TSEs
+      const hasSeedRecords = existingParsed.some((r: any) =>
+        r.tseId === "EDB-TSE-SUR1" || r.tseId === "EDB-TSE-SUR2"
+      );
+      if (!hasSeedRecords) {
+
+        // ── Pool + tranche constants (mirrors incentiveStructureV6.ts) ────────
+        const POOL_BY_TERM: Record<number, number> = { 1:50, 2:100, 3:150, 6:300, 9:450, 12:600 };
+        const CHECK_MONTHS: Record<number, string[]> = {
+          1:["M1","M2"], 2:["M1","M2"], 3:["M1","M3"],
+          6:["M1","M3","M6"], 9:["M1","M3","M6","M9"], 12:["M1","M3","M6","M9","M12"],
+        };
+        // M1 = 30%, rest split equally
+        const TRANCHE_SPLIT = (term: number) => {
+          const pool = POOL_BY_TERM[term];
+          const months = CHECK_MONTHS[term];
+          const m1 = Math.round(pool * 0.30 * 100) / 100;
+          const later = months.slice(1).length;
+          const laterAmt = later > 0 ? Math.round(((pool - m1) / later) * 100) / 100 : 0;
+          return months.map((cm, idx) => ({ cm, poolAmt: idx === 0 ? m1 : laterAmt }));
+        };
+
+        // Pool split by source: DIGITAL → TSE 20%, SM 10%, SH 5%, TSM 7.5%
+        //                        BTL    → TSE 20%, SM 10%, SH 5%, TSM 7.5%, SUPERVISOR 15%
+        const SPLIT: Record<string, Record<string, number>> = {
+          DIGITAL: { TSE: 20, SM: 10, SH: 5,  TSM: 7.5 },
+          BTL:     { TSE: 20, SM: 10, SH: 5,  TSM: 7.5, SUPERVISOR: 15 },
+          BULK_DEAL: { TSE: 15, SM: 15, SH: 8, TSM: 7.5 },
+        };
+
+        // Employee map
+        const EMP: Record<string, { id: string; name: string }> = {
+          TSE_SUR1:  { id: "EDB-TSE-SUR1",  name: "Pooja Sharma"   },
+          TSE_SUR2:  { id: "EDB-TSE-SUR2",  name: "Ankit Trivedi"  },
+          TSE_MUM1:  { id: "EDB-TSE-MUM1",  name: "Swati Parab"    },
+          SM_SUR1:   { id: "EDB-SMGR-SUR1", name: "Nayan Joshi"    },
+          SM_SUR2:   { id: "EDB-SMGR-SUR2", name: "Kalpesh Rathod" },
+          SH_SUR1:   { id: "EDB-SH-SUR1",   name: "Priya Nair"     },
+          TSM_SUR1:  { id: "EDB-TSM-SUR1",  name: "Sanjay Kapoor"  },
+          SUP_SUR1:  { id: "EDB-SUP-SUR1",  name: "Harish Solanki" },
+        };
+
+        // Helper: build one SubscriptionIncentiveRecord
+        const mkRecord = (
+          subId: string, custId: string, custName: string,
+          planType: string, vehicleCat: string, monthlyAmt: number,
+          term: number, source: string, activationDateStr: string,
+          cityId: string,
+          tse: { id: string; name: string },
+          sm: { id: string; name: string },
+          sh: { id: string; name: string },
+          tsm: { id: string; name: string },
+          sup?: { id: string; name: string },
+          overrideStatuses?: Record<string, string>, // cm → PAID | FORFEITED
+          cancelledDate?: string
+        ) => {
+          const pool = POOL_BY_TERM[term] ?? 50;
+          const split = SPLIT[source] ?? SPLIT.DIGITAL;
+          const tranches = TRANCHE_SPLIT(term);
+          const actDate = new Date(activationDateStr);
+          const mOffset: Record<string, number> = {
+            M1:0, M2:1, M3:2, M6:5, M9:8, M12:11
+          };
+
+          const builtTranches = tranches.map(({ cm, poolAmt }) => {
+            const due = new Date(actDate);
+            due.setMonth(due.getMonth() + (mOffset[cm] ?? 0));
+
+            // Role payouts
+            const rolePayouts: any[] = [];
+            const empMap: Record<string, { id: string; name: string }> = {
+              TSE: tse, SM: sm, SH: sh, TSM: tsm,
+              ...(sup ? { SUPERVISOR: sup } : {}),
+            };
+            Object.entries(split).forEach(([role, pct]) => {
+              const emp = empMap[role];
+              if (!emp?.id) return;
+              const amount = Math.round(poolAmt * (pct / 100) * 100) / 100;
+              const status = overrideStatuses?.[cm] ?? "PENDING";
+              rolePayouts.push({
+                role, employeeId: emp.id, employeeName: emp.name,
+                pct, amount, status,
+                ...(status === "PAID" ? { paidDate: due.toISOString().split("T")[0] } : {}),
+                ...(status === "FORFEITED" ? { forfeitedReason: "CANCELLATION" } : {}),
+              });
+            });
+
+            const trancheStatus = overrideStatuses?.[cm] ?? "PENDING";
+            return {
+              id: `TRN-${subId}-${cm}`,
+              subscriptionId: subId,
+              checkMonth: cm,
+              dueDate: due.toISOString().split("T")[0],
+              poolAmount: poolAmt,
+              rolePayouts,
+              status: trancheStatus,
+            };
+          });
+
+          return {
+            id: `INC-${subId}`,
+            subscriptionId: subId,
+            customerId: custId,
+            customerName: custName,
+            planType, vehicleCategory: vehicleCat,
+            monthlyAmount: monthlyAmt,
+            term, source, activationDate: activationDateStr,
+            cityId,
+            tseId: tse.id, tseName: tse.name,
+            smId: sm.id,   smName: sm.name,
+            shId: sh.id,   shName: sh.name,
+            tsmId: tsm.id, tsmName: tsm.name,
+            ...(sup ? { supervisorId: sup.id, supervisorName: sup.name } : {}),
+            poolTotal: pool,
+            isZeroPool: pool === 0,
+            tranches: builtTranches,
+            status: cancelledDate ? "CANCELLED" : "ACTIVE",
+            ...(cancelledDate ? { cancelledDate } : {}),
+          };
+        };
+
+        // ── POOJA SHARMA (EDB-TSE-SUR1) — 28 conversions, gate MET ───────────
+        // Goal: show PAID M1 tranches for Feb subs, PENDING for recent,
+        //       FORFEITED for one cancelled subscription, and a SHINE H token deal.
+
+        const POOJA_RECORDS: any[] = [
+
+          // ── Feb subs — M1 PAID (disbursed in Mar), M3 PENDING ────────────
+          mkRecord("SUB-SUR-0001","CUST-SUR-001","Arjun Mehta",
+            "PROTECT","SUV / MUV / Sedan",1999, 3,"DIGITAL","2026-02-01","CITY-SURAT",
+            EMP.TSE_SUR1,EMP.SM_SUR1,EMP.SH_SUR1,EMP.TSM_SUR1,undefined,
+            { M1:"PAID", M3:"PENDING" }),
+
+          mkRecord("SUB-SUR-0004","CUST-SUR-004","Sneha Patel",
+            "PROTECT","Hatchback / Compact Sedan",1599, 3,"DIGITAL","2026-02-04","CITY-SURAT",
+            EMP.TSE_SUR1,EMP.SM_SUR1,EMP.SH_SUR1,EMP.TSM_SUR1,undefined,
+            { M1:"PAID", M3:"PENDING" }),
+
+          mkRecord("SUB-SUR-0007","CUST-SUR-007","Kavya Reddy",
+            "ELITE","SUV / MUV / Sedan",2499, 3,"DIGITAL","2026-02-07","CITY-SURAT",
+            EMP.TSE_SUR1,EMP.SM_SUR1,EMP.SH_SUR1,EMP.TSM_SUR1,undefined,
+            { M1:"PAID", M3:"PENDING" }),
+
+          mkRecord("SUB-SUR-0010","CUST-SUR-010","Rahul Singh",
+            "PROTECT","Hatchback / Compact Sedan",1599, 6,"DIGITAL","2026-02-10","CITY-SURAT",
+            EMP.TSE_SUR1,EMP.SM_SUR1,EMP.SH_SUR1,EMP.TSM_SUR1,undefined,
+            { M1:"PAID", M3:"PENDING", M6:"PENDING" }),
+
+          mkRecord("SUB-SUR-0013","CUST-SUR-013","Divya Sharma",
+            "ELITE","Luxury / Large SUV",3499, 1,"DIGITAL","2026-02-13","CITY-SURAT",
+            EMP.TSE_SUR1,EMP.SM_SUR1,EMP.SH_SUR1,EMP.TSM_SUR1,undefined,
+            { M1:"PAID", M2:"PENDING" }),
+
+          // BTL source — supervisor in chain
+          mkRecord("SUB-SUR-0016","CUST-SUR-016","Vikas Nair",
+            "PROTECT","SUV / MUV / Sedan",1999, 3,"BTL","2026-02-16","CITY-SURAT",
+            EMP.TSE_SUR1,EMP.SM_SUR1,EMP.SH_SUR1,EMP.TSM_SUR1,EMP.SUP_SUR1,
+            { M1:"PAID", M3:"PENDING" }),
+
+          mkRecord("SUB-SUR-0019","CUST-SUR-019","Nisha Kumar",
+            "PROTECT","Hatchback / Compact Sedan",1599, 1,"BTL","2026-02-19","CITY-SURAT",
+            EMP.TSE_SUR1,EMP.SM_SUR1,EMP.SH_SUR1,EMP.TSM_SUR1,EMP.SUP_SUR1,
+            { M1:"PAID", M2:"PENDING" }),
+
+          // ── FORFEITED — customer cancelled before M3 ──────────────────────
+          mkRecord("SUB-SUR-0022","CUST-SUR-022","Amit Joshi",
+            "PROTECT","Hatchback / Compact Sedan",1599, 3,"DIGITAL","2026-02-22","CITY-SURAT",
+            EMP.TSE_SUR1,EMP.SM_SUR1,EMP.SH_SUR1,EMP.TSM_SUR1,undefined,
+            { M1:"PAID", M3:"FORFEITED" }, "2026-03-15"),
+
+          // ── Mar subs — M1 PENDING (due soon) ─────────────────────────────
+          mkRecord("SUB-SUR-0025","CUST-SUR-025","Priya Menon",
+            "ELITE","SUV / MUV / Sedan",2499, 3,"DIGITAL","2026-03-05","CITY-SURAT",
+            EMP.TSE_SUR1,EMP.SM_SUR1,EMP.SH_SUR1,EMP.TSM_SUR1,undefined),
+
+          mkRecord("SUB-SUR-0028","CUST-SUR-028","Suresh Iyer",
+            "PROTECT","Hatchback / Compact Sedan",1599, 3,"DIGITAL","2026-03-08","CITY-SURAT",
+            EMP.TSE_SUR1,EMP.SM_SUR1,EMP.SH_SUR1,EMP.TSM_SUR1,undefined),
+
+          mkRecord("SUB-SUR-0031","CUST-SUR-031","Anita Desai",
+            "PROTECT","SUV / MUV / Sedan",1999, 6,"DIGITAL","2026-03-11","CITY-SURAT",
+            EMP.TSE_SUR1,EMP.SM_SUR1,EMP.SH_SUR1,EMP.TSM_SUR1,undefined),
+
+          mkRecord("SUB-SUR-0034","CUST-SUR-034","Ramesh Patel",
+            "ELITE","Luxury / Large SUV",3499, 12,"DIGITAL","2026-03-14","CITY-SURAT",
+            EMP.TSE_SUR1,EMP.SM_SUR1,EMP.SH_SUR1,EMP.TSM_SUR1,undefined),
+
+          // BTL March
+          mkRecord("SUB-SUR-0037","CUST-SUR-037","Pooja Jain",
+            "PROTECT","Hatchback / Compact Sedan",1599, 3,"BTL","2026-03-17","CITY-SURAT",
+            EMP.TSE_SUR1,EMP.SM_SUR1,EMP.SH_SUR1,EMP.TSM_SUR1,EMP.SUP_SUR1),
+
+          mkRecord("SUB-SUR-0040","CUST-SUR-040","Rakesh Verma",
+            "ELITE","SUV / MUV / Sedan",2499, 3,"BTL","2026-03-20","CITY-SURAT",
+            EMP.TSE_SUR1,EMP.SM_SUR1,EMP.SH_SUR1,EMP.TSM_SUR1,EMP.SUP_SUR1),
+
+          // ── Apr subs — M1 PENDING (not yet due) ─────────────────────────
+          mkRecord("SUB-SUR-0043","CUST-SUR-043","Meena Shah",
+            "PROTECT","Hatchback / Compact Sedan",1599, 3,"DIGITAL","2026-04-02","CITY-SURAT",
+            EMP.TSE_SUR1,EMP.SM_SUR1,EMP.SH_SUR1,EMP.TSM_SUR1,undefined),
+
+          mkRecord("SUB-SUR-0046","CUST-SUR-046","Vivek Rao",
+            "ELITE","SUV / MUV / Sedan",2499, 6,"DIGITAL","2026-04-05","CITY-SURAT",
+            EMP.TSE_SUR1,EMP.SM_SUR1,EMP.SH_SUR1,EMP.TSM_SUR1,undefined),
+
+          // ── SHINE Hatchback + add-on qualifying deal (SHINE H token) ──────
+          mkRecord("SUB-SUR-0049","CUST-SUR-049","Harsh Modi",
+            "SHINE","Hatchback / Compact Sedan",1249, 1,"DIGITAL","2026-04-08","CITY-SURAT",
+            EMP.TSE_SUR1,EMP.SM_SUR1,EMP.SH_SUR1,EMP.TSM_SUR1,undefined),
+
+          mkRecord("SUB-SUR-0052","CUST-SUR-052","Komal Trivedi",
+            "SHINE","Hatchback / Compact Sedan",1249, 1,"DIGITAL","2026-04-10","CITY-SURAT",
+            EMP.TSE_SUR1,EMP.SM_SUR1,EMP.SH_SUR1,EMP.TSM_SUR1,undefined),
+
+          mkRecord("SUB-SUR-0055","CUST-SUR-055","Sonal Bhatt",
+            "PROTECT","Hatchback / Compact Sedan",1599, 3,"DIGITAL","2026-04-13","CITY-SURAT",
+            EMP.TSE_SUR1,EMP.SM_SUR1,EMP.SH_SUR1,EMP.TSM_SUR1,undefined),
+
+          mkRecord("SUB-SUR-0058","CUST-SUR-058","Chirag Mehta",
+            "ELITE","SUV / MUV / Sedan",2499, 3,"BTL","2026-04-16","CITY-SURAT",
+            EMP.TSE_SUR1,EMP.SM_SUR1,EMP.SH_SUR1,EMP.TSM_SUR1,EMP.SUP_SUR1),
+
+          mkRecord("SUB-SUR-0061","CUST-SUR-061","Tina Shah",
+            "PROTECT","Hatchback / Compact Sedan",1599, 1,"DIGITAL","2026-04-19","CITY-SURAT",
+            EMP.TSE_SUR1,EMP.SM_SUR1,EMP.SH_SUR1,EMP.TSM_SUR1,undefined),
+
+          mkRecord("SUB-SUR-0064","CUST-SUR-064","Ketan Patel",
+            "ELITE","Luxury / Large SUV",3499, 3,"DIGITAL","2026-04-22","CITY-SURAT",
+            EMP.TSE_SUR1,EMP.SM_SUR1,EMP.SH_SUR1,EMP.TSM_SUR1,undefined),
+
+          mkRecord("SUB-SUR-0067","CUST-SUR-067","Riya Joshi",
+            "PROTECT","SUV / MUV / Sedan",1999, 3,"BTL","2026-04-25","CITY-SURAT",
+            EMP.TSE_SUR1,EMP.SM_SUR1,EMP.SH_SUR1,EMP.TSM_SUR1,EMP.SUP_SUR1),
+
+          mkRecord("SUB-SUR-0070","CUST-SUR-070","Ajay Nair",
+            "PROTECT","Hatchback / Compact Sedan",1599, 6,"DIGITAL","2026-04-28","CITY-SURAT",
+            EMP.TSE_SUR1,EMP.SM_SUR1,EMP.SH_SUR1,EMP.TSM_SUR1,undefined),
+
+          mkRecord("SUB-SUR-0073","CUST-SUR-073","Simran Kaur",
+            "ELITE","SUV / MUV / Sedan",2499, 1,"DIGITAL","2026-05-01","CITY-SURAT",
+            EMP.TSE_SUR1,EMP.SM_SUR1,EMP.SH_SUR1,EMP.TSM_SUR1,undefined),
+
+          mkRecord("SUB-SUR-0076","CUST-SUR-076","Dev Bhatt",
+            "PROTECT","Hatchback / Compact Sedan",1599, 3,"BTL","2026-05-04","CITY-SURAT",
+            EMP.TSE_SUR1,EMP.SM_SUR1,EMP.SH_SUR1,EMP.TSM_SUR1,EMP.SUP_SUR1),
+
+          mkRecord("SUB-SUR-0079","CUST-SUR-079","Reena Kapoor",
+            "ELITE","Luxury / Large SUV",3499, 3,"DIGITAL","2026-05-07","CITY-SURAT",
+            EMP.TSE_SUR1,EMP.SM_SUR1,EMP.SH_SUR1,EMP.TSM_SUR1,undefined),
+
+          mkRecord("SUB-SUR-0082","CUST-SUR-082","Harsh Shah",
+            "PROTECT","SUV / MUV / Sedan",1999, 3,"DIGITAL","2026-05-10","CITY-SURAT",
+            EMP.TSE_SUR1,EMP.SM_SUR1,EMP.SH_SUR1,EMP.TSM_SUR1,undefined),
+        ];
+
+        // ── ANKIT TRIVEDI (EDB-TSE-SUR2) — 8 conversions, gate NOT MET ───────
+        // All tranches PENDING — gate locked state shown in tracker
+
+        const ANKIT_RECORDS: any[] = [
+          mkRecord("SUB-SUR-0085","CUST-SUR-085","Sunil Mehta",
+            "PROTECT","Hatchback / Compact Sedan",1599, 3,"DIGITAL","2026-04-03","CITY-SURAT",
+            EMP.TSE_SUR2,EMP.SM_SUR2,EMP.SH_SUR1,EMP.TSM_SUR1),
+
+          mkRecord("SUB-SUR-0086","CUST-SUR-086","Neha Trivedi",
+            "PROTECT","SUV / MUV / Sedan",1999, 3,"DIGITAL","2026-04-08","CITY-SURAT",
+            EMP.TSE_SUR2,EMP.SM_SUR2,EMP.SH_SUR1,EMP.TSM_SUR1),
+
+          mkRecord("SUB-SUR-0087","CUST-SUR-087","Mohan Das",
+            "ELITE","SUV / MUV / Sedan",2499, 1,"BTL","2026-04-12","CITY-SURAT",
+            EMP.TSE_SUR2,EMP.SM_SUR2,EMP.SH_SUR1,EMP.TSM_SUR1,EMP.SUP_SUR1),
+
+          mkRecord("SUB-SUR-0088","CUST-SUR-088","Ritu Agarwal",
+            "PROTECT","Hatchback / Compact Sedan",1599, 1,"DIGITAL","2026-04-17","CITY-SURAT",
+            EMP.TSE_SUR2,EMP.SM_SUR2,EMP.SH_SUR1,EMP.TSM_SUR1),
+
+          mkRecord("SUB-SUR-0089","CUST-SUR-089","Ajit Rane",
+            "PROTECT","SUV / MUV / Sedan",1999, 3,"DIGITAL","2026-04-21","CITY-SURAT",
+            EMP.TSE_SUR2,EMP.SM_SUR2,EMP.SH_SUR1,EMP.TSM_SUR1),
+
+          mkRecord("SUB-SUR-0090","CUST-SUR-090","Bhavika Shah",
+            "SHINE","Hatchback / Compact Sedan",1249, 1,"DIGITAL","2026-04-25","CITY-SURAT",
+            EMP.TSE_SUR2,EMP.SM_SUR2,EMP.SH_SUR1,EMP.TSM_SUR1),
+
+          mkRecord("SUB-SUR-0091","CUST-SUR-091","Jiten Patel",
+            "ELITE","Luxury / Large SUV",3499, 3,"DIGITAL","2026-04-28","CITY-SURAT",
+            EMP.TSE_SUR2,EMP.SM_SUR2,EMP.SH_SUR1,EMP.TSM_SUR1),
+
+          mkRecord("SUB-SUR-0092","CUST-SUR-092","Prachi Jain",
+            "PROTECT","Hatchback / Compact Sedan",1599, 3,"BTL","2026-05-02","CITY-SURAT",
+            EMP.TSE_SUR2,EMP.SM_SUR2,EMP.SH_SUR1,EMP.TSM_SUR1,EMP.SUP_SUR1),
+        ];
+
+        // ── SWATI PARAB (EDB-TSE-MUM1) — 15 conversions, Mumbai ──────────────
+        // Gate met. Mix of PAID + PENDING tranches.
+
+        const SWATI_RECORDS: any[] = [
+          mkRecord("SUB-MUM-0001","CUST-MUM-001","Rohan Joshi",
+            "PROTECT","Hatchback / Compact Sedan",1599, 3,"DIGITAL","2026-02-10","CITY-MUMBAI",
+            EMP.TSE_MUM1,{ id:"EDB-SMGR-MUM1",name:"Vikram Shetty" },
+            { id:"EDB-SH-MUM1",name:"Ananya Singh" },
+            { id:"EDB-TSM-MUM1",name:"Vikram Shetty" },undefined,
+            { M1:"PAID", M3:"PENDING" }),
+
+          mkRecord("SUB-MUM-0002","CUST-MUM-002","Sheetal More",
+            "ELITE","SUV / MUV / Sedan",2499, 3,"DIGITAL","2026-02-15","CITY-MUMBAI",
+            EMP.TSE_MUM1,{ id:"EDB-SMGR-MUM1",name:"Vikram Shetty" },
+            { id:"EDB-SH-MUM1",name:"Ananya Singh" },
+            { id:"EDB-TSM-MUM1",name:"Vikram Shetty" },undefined,
+            { M1:"PAID", M3:"PENDING" }),
+
+          ...[3,4,5,6,7,8,9,10,11,12,13,14,15].map((n) =>
+            mkRecord(`SUB-MUM-00${String(n).padStart(2,"0")}`,
+              `CUST-MUM-0${String(n).padStart(2,"0")}`,`Mumbai Customer ${n}`,
+              n % 3 === 0 ? "ELITE" : "PROTECT",
+              n % 2 === 0 ? "SUV / MUV / Sedan" : "Hatchback / Compact Sedan",
+              n % 3 === 0 ? 2499 : 1599,
+              n % 2 === 0 ? 3 : 1,
+              n % 3 === 0 ? "BTL" : "DIGITAL",
+              `2026-0${n < 4 ? 3 : n < 9 ? 4 : 5}-${String((n * 2) % 28 + 1).padStart(2,"0")}`,
+              "CITY-MUMBAI",
+              EMP.TSE_MUM1,
+              { id:"EDB-SMGR-MUM1",name:"Vikram Shetty" },
+              { id:"EDB-SH-MUM1",name:"Ananya Singh" },
+              { id:"EDB-TSM-MUM1",name:"Vikram Shetty" },
+              n % 3 === 0 ? { id:"EDB-SUP-MUM1",name:"Sudhir Patil" } : undefined
+            )
+          ),
+        ];
+
+        // ── Write all records ─────────────────────────────────────────────────
+        const ALL_RECORDS = [
+          ...existingParsed,
+          ...POOJA_RECORDS,
+          ...ANKIT_RECORDS,
+          ...SWATI_RECORDS,
+        ];
+
+        localStorage.setItem(INCENTIVE_KEY, JSON.stringify(ALL_RECORDS));
+
+        // Also seed add-on incentive records for Pooja (show PATH A bonuses)
+        const existingAddons = localStorage.getItem(ADDON_KEY);
+        if (!existingAddons || JSON.parse(existingAddons).length === 0) {
+          const ADDON_RECORDS = [
+            { id:"ADDON-SUR-001", subscriptionId:"SUB-SUR-0049", tseId:"EDB-TSE-SUR1",
+              tseName:"Pooja Sharma", addonName:"Interior Deep Vacuum", addonPrice:199,
+              vehicleTier:"hatchback", path:"PATH_A", poolAmount:20,
+              tseAmount:9, status:"PENDING", activationDate:"2026-04-08", cityId:"CITY-SURAT" },
+            { id:"ADDON-SUR-002", subscriptionId:"SUB-SUR-0052", tseId:"EDB-TSE-SUR1",
+              tseName:"Pooja Sharma", addonName:"Tyre Dressing", addonPrice:99,
+              vehicleTier:"hatchback", path:"PATH_A", poolAmount:20,
+              tseAmount:9, status:"PENDING", activationDate:"2026-04-10", cityId:"CITY-SURAT" },
+            { id:"ADDON-SUR-003", subscriptionId:"SUB-SUR-0022", tseId:"EDB-TSE-SUR1",
+              tseName:"Pooja Sharma", addonName:"Dashboard & Console Detail", addonPrice:149,
+              vehicleTier:"suv", path:"PATH_A", poolAmount:20,
+              tseAmount:9, status:"FORFEITED", activationDate:"2026-02-22",
+              forfeitedReason:"CANCELLATION", cityId:"CITY-SURAT" },
+          ];
+          localStorage.setItem(ADDON_KEY, JSON.stringify(ADDON_RECORDS));
+        }
+
+        console.log(`[seedAllData] ✅ TSE Incentive V6 seeded:` +
+          ` Pooja=${POOJA_RECORDS.length} subs,` +
+          ` Ankit=${ANKIT_RECORDS.length} subs (gate not met),` +
+          ` Swati=${SWATI_RECORDS.length} subs (Mumbai)`);
+      }
+    }
+    // ── END TSE INCENTIVE V6 SEED ─────────────────────────────────────────────
 
     // Mark rich seed version complete
     localStorage.setItem("cc360_rich_seed_version", RICH_SEED_VERSION);
