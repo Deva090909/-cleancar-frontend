@@ -17,7 +17,7 @@
  *   EMPLOYEE_DATABASE_RECORDS    (auth system)
  */
 
-const SEED_FLAG = "ALL_DATA_SEEDED_V7";
+const SEED_FLAG = "ALL_DATA_SEEDED_V8";
 
 // ─── Shared helpers ───────────────────────────────────────────────────────────
 const NOW   = new Date().toISOString();
@@ -798,7 +798,7 @@ export function seedAllData(): void {
     ["HISTORIC_DATA_SEEDED_V1","HISTORIC_DATA_SEEDED_V2","HISTORIC_DATA_SEEDED_V3",
      "HISTORIC_DATA_SEEDED_V4","HISTORIC_DATA_SEEDED_V5","ACC_SEED_V1","ACC_SEED_V2",
      "ALL_DATA_SEEDED_V1","ALL_DATA_SEEDED_V2","ALL_DATA_SEEDED_V3","ALL_DATA_SEEDED_V4",
-     "ALL_DATA_SEEDED_V5","ALL_DATA_SEEDED_V6"
+     "ALL_DATA_SEEDED_V5","ALL_DATA_SEEDED_V6","ALL_DATA_SEEDED_V7"
     ].forEach(f => localStorage.removeItem(f));
 
     // FIX: Set SEED_FLAG first — prevents infinite re-seed if quota hit mid-run
