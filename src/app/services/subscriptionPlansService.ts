@@ -512,6 +512,69 @@ class SubscriptionPlansService {
 
     return totalAfterDiscount;
   }
+  // ============================================
+  // API SYNC — single source of truth fix
+  // ============================================
+
+  /**
+   * Load plan tiers and addons from Railway PostgreSQL.
+   * Call at app startup. After this, DataService has API prices.
+   * PlanDefinitionContext listens for cc360_plan_price_changed and reloads.
+   */
+  async loadFromApi(): Promise<void> {
+    try {
+      const { PlanApiService } = await import("./PlanApiService");
+      const { DataService } = await import("./DataService");
+      const [apiTiers, apiAddons] = await Promise.all([
+        PlanApiService.getTiers(),
+        PlanApiService.getAddons(),
+      ]);
+      if (apiTiers.length > 0) {
+        DataService.setAll("PLAN_TIERS", apiTiers.map(t => ({
+          id: t.id, name: t.name, displayName: t.displayName,
+          vehicleCategoryId: t.vehicleCategory,
+          baseMonthlyPrice: t.baseMonthlyPrice, costPerWash: t.costPerWash,
+          sortOrder: t.sortOrder, washesPerMonth: 26, isActive: t.isActive,
+        })));
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("cc360_plan_price_changed"));
+        }
+      }
+      if (apiAddons.length > 0) {
+        DataService.setAll("PLAN_ADDONS", apiAddons.map(a => ({
+          id: a.id, name: a.name, description: a.description,
+          category: a.category, hatchbackPrice: a.hatchbackPrice,
+          suvPrice: a.suvPrice, luxuryPrice: a.luxuryPrice, isActive: a.isActive,
+          price: a.hatchbackPrice, billingType: "PER_MONTH",
+        })));
+      }
+    } catch (e) {
+      console.warn("[subscriptionPlansService] API load failed, using cached data:", e);
+    }
+  }
+
+  /**
+   * getPlanTiersByCategory with API override.
+   * Returns API-loaded tiers from DataService if available,
+   * falls back to hardcoded PLAN_BASE_PRICES if not.
+   */
+  getPlanTiersByCategoryWithOverride(vehicleCategoryId: string): PlanTier[] {
+    try {
+      const { DataService } = require("./DataService");
+      const stored = DataService.get("PLAN_TIERS") as PlanTier[];
+      const filtered = stored.filter((t: PlanTier) =>
+        t.vehicleCategoryId === vehicleCategoryId && t.isActive !== false
+      );
+      if (filtered.length > 0) {
+        return filtered.sort((a: PlanTier, b: PlanTier) =>
+          ((a as any).sortOrder || 0) - ((b as any).sortOrder || 0)
+        );
+      }
+    } catch {}
+    return this.getPlanTiersByCategory(vehicleCategoryId);
+  }
+
+
 }
 
 // Export singleton instance
