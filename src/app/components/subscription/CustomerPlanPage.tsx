@@ -248,7 +248,7 @@ function StepBar({step, goTo}: {step:number; goTo:(n:number)=>void}) {
 }
 
 // ─── LIVE COST PANEL ─────────────────────────────────────────────────────────
-function CostPanel({step,activeCat,vehicleCategories,selectedPlan,planMode,selectedPack,planPrice,packPrice,addons,addonTotal,total,commitment,commitments,cfg,vehicleCat,basePrice,couponDiscount=0,referralDiscount=0,promoDiscount=0,couponCode,referralCode}: any) {
+function CostPanel({step,activeCat,vehicleCategories,selectedPlan,planMode,selectedPack,planPrice,packPrice,addons,addonTotal,total,commitment,commitments,cfg,vehicleCat,basePrice,couponDiscount=0,referralDiscount=0,promoDiscount=0,couponCode,referralCode,commitMonths=1,addonFreqMonth=4,addonGrandTotal=0}: any) {
   const planObj = cfg.monthlyPlans.find((p:any)=>p.id===selectedPlan);
   const catIcon = vehicleCategories.find((c:any)=>c.id===activeCat)?.icon||"🚗";
   const catLabel = vehicleCategories.find((c:any)=>c.id===activeCat)?.label;
@@ -271,7 +271,7 @@ function CostPanel({step,activeCat,vehicleCategories,selectedPlan,planMode,selec
         <div style={{fontSize:11,color:"rgba(199,210,254,0.7)",letterSpacing:2,textTransform:"uppercase",marginBottom:6,fontWeight:600}}>Order Summary</div>
         <div key={grandTotal} className={priceChanged?"cpp-price-change":""} style={{fontSize:36,fontWeight:800,color:"white",fontFamily:"'Playfair Display',serif",lineHeight:1}}>
           {inr(grandTotal>0?grandTotal:0)}
-          {planMode==="monthly" && <span style={{fontSize:14,fontWeight:400,opacity:0.6,fontFamily:"'Sora',sans-serif"}}>/mo</span>}
+          {planMode==="monthly" && <span style={{fontSize:14,fontWeight:400,opacity:0.6,fontFamily:"'Sora',sans-serif"}}>{commitMonths>1?` total (${commitMonths} months)`:"/mo"}</span>}
         </div>
         {discountAmt>0 && (
           <div style={{marginTop:8,display:"inline-flex",alignItems:"center",gap:6,background:"rgba(16,185,129,0.2)",border:"1px solid rgba(16,185,129,0.3)",borderRadius:20,padding:"4px 10px"}}>
@@ -305,11 +305,11 @@ function CostPanel({step,activeCat,vehicleCategories,selectedPlan,planMode,selec
           <div style={{padding:"10px 12px",background:"linear-gradient(135deg,#f5f3ff,#ede9fe)",borderRadius:12,marginBottom:10}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
               <div>
-                <div style={{fontSize:11,color:"#64748b"}}>Monthly Plan</div>
+                <div style={{fontSize:11,color:"#64748b"}}>{commitMonths>1?`${commitMonths}-Month Subscription`:"Monthly Plan"}</div>
                 <div style={{fontSize:13,fontWeight:700,color:"#1e293b"}}>{planObj?.icon} {planObj?.name}</div>
-                <div style={{fontSize:11,color:"#7c3aed"}}>~₹{Math.round(planPrice/30)}/wash</div>
+                <div style={{fontSize:11,color:"#7c3aed"}}>₹{inr(planPrice)}/mo × {commitMonths} mo{commitMonths>1?` = ${inr(planPrice*commitMonths)}`:""}</div>
               </div>
-              <div style={{fontSize:16,fontWeight:800,color:"#4f46e5"}}>{inr(planPrice)}</div>
+              <div style={{fontSize:16,fontWeight:800,color:"#4f46e5"}}>{inr(planPrice*commitMonths)}</div>
             </div>
           </div>
         )}
@@ -335,17 +335,21 @@ function CostPanel({step,activeCat,vehicleCategories,selectedPlan,planMode,selec
 
         {addons.length>0 && (
           <div style={{marginBottom:10}}>
-            <div style={{fontSize:11,color:"#94a3b8",marginBottom:6,textTransform:"uppercase",letterSpacing:0.5}}>Add-ons</div>
+            <div style={{fontSize:11,color:"#94a3b8",marginBottom:6,textTransform:"uppercase",letterSpacing:0.5}}>
+              Add-ons {commitMonths>1?`(${addonFreqMonth}×/mo × ${commitMonths} mo)`:""}
+            </div>
             {addons.map((id:string)=>{
               const a=cfg.addons.find((x:any)=>x.id===id);
               const p=a?.prices?.[vehicleCat]??a?.price??0;
+              const totalP = commitMonths>1 ? p*addonFreqMonth*commitMonths : p;
               return (
                 <div key={id} style={{display:"flex",justifyContent:"space-between",fontSize:12,padding:"4px 0",borderBottom:"1px dashed rgba(148,163,184,0.2)"}}>
-                  <span style={{color:"#475569"}}>+ {a?.name}</span>
-                  <span style={{color:"#1e293b",fontWeight:600}}>{inr(p)}</span>
+                  <span style={{color:"#475569"}}>+ {a?.name}{commitMonths>1?` (${inr(p)}/visit)`:""}</span>
+                  <span style={{color:"#1e293b",fontWeight:600}}>{inr(totalP)}</span>
                 </div>
               );
             })}
+            {commitMonths>1 && <div style={{fontSize:10,color:"#94a3b8",marginTop:4}}>Based on {addonFreqMonth} visit{addonFreqMonth>1?"s":""}/month over {commitMonths} months</div>}
           </div>
         )}
 
@@ -431,6 +435,8 @@ export function CustomerPlanPage() {
   const [commitment, setCommitment] = useState("monthly");
   const [addons, setAddons] = useState<string[]>([]);
   const [addonFreq, setAddonFreq] = useState<Record<string,string>>({});
+  const [addonFreqMonth, setAddonFreqMonth] = useState<number>(4); // visits/month for add-ons
+
   const [bundleFreq, setBundleFreq] = useState<Record<string,string>>({});
   const _washRef = useRef<string>("shampoo");
   const [, _forceWashRender] = useState(0);
@@ -475,11 +481,19 @@ export function CustomerPlanPage() {
   const planPrice=useMemo(()=>{ if(!selectedPlan||!activeCat)return 0; return cfg.monthlyPlans.find(p=>p.id===selectedPlan)?.prices[activeCat]??0; },[selectedPlan,activeCat,cfg.monthlyPlans]);
   const packPrice=useMemo(()=>{ const p=cfg.packs.find(p=>p.id===selectedPack); if(!p)return 0; const n=(p as any).prices; if(n){const w=n[_washRef.current]??n.shampoo??n.waterWash??Object.values(n)[0]; if(w&&typeof w==="object"){const _c=vehicleCat; const cp=(w as any)[_c]??(w as any).hatchback??0; return typeof cp==="number"?cp:0;}} return typeof(p as any).price==="number"?(p as any).price:0; },[selectedPack,_washRef.current,cfg.packs,activeCat]);
   const addonTotal=useMemo(()=>{ const ind=addons.reduce((s,id)=>{ const inB=(cfg as any).comboBundles?.some((b:any)=>b.addonIds.includes(id)&&b.addonIds.every((bid:string)=>addons.includes(bid))); if(inB)return s; const f=addonFreq[id]?parseInt(addonFreq[id]):1; return s+getAddonPrice(id)*(isNaN(f)?1:f); },0); const bt=((cfg as any).comboBundles||[]).reduce((s:number,b:any)=>{ const aS=b.addonIds.every((id:string)=>addons.includes(id)); if(!aS)return s; const bp=b.prices?.[vehicleCat]??b.prices?.hatchback??0; const f=bundleFreq[b.id]?parseInt(bundleFreq[b.id]):1; return s+bp*(isNaN(f)?1:f); },0); return ind+bt; },[addons,addonFreq,bundleFreq,cfg.addons,selectedPlan,activeCat]);
-  const basePrice=planMode==="monthly"?planPrice:packPrice;
-  const total=basePrice+addonTotal;
+  const commitMonths = commitment==="3month"?3:commitment==="6month"?6:commitment==="12month"?12:1;
+  // Monthly billing: total is planPrice × months (before discount)
+  // Add-ons per visit × 4 washes/month × months = monthly addon cost × months
+  const basePrice = planMode==="monthly" ? planPrice*commitMonths : packPrice;
+  // Add-ons: user chooses visits/month; default 4 washes/month for monthly plans
+  const addonVisitsPerMonth = planMode==="monthly" ? (addonFreqMonth || 4) : 1;
+  const addonMonthlyTotal = addonTotal * (planMode==="monthly" ? addonVisitsPerMonth : 1);
+  const addonGrandTotal = planMode==="monthly" ? addonMonthlyTotal * commitMonths : addonMonthlyTotal;
+  const total = basePrice + addonGrandTotal;
   const isOneTime=planMode==="pack"&&selectedPack==="onetime";
   const discountPct=commitment==="3month"?5:commitment==="6month"?10:commitment==="12month"?18:0;
-  const discountAmt=planMode==="monthly"?Math.round(planPrice*discountPct/100):0;
+  // Discount applies to base plan price only (not add-ons)
+  const discountAmt=planMode==="monthly"?Math.round(planPrice*commitMonths*discountPct/100):0;
   const couponDiscount = couponResult?.valid ? (couponResult.discount||0) : 0;
   const referralDiscount = referralResult?.valid ? (referralResult.discount||0) : 0;
   const finalTotal = Math.max(0, total - discountAmt - couponDiscount - referralDiscount - promoDiscount);
@@ -825,8 +839,11 @@ export function CustomerPlanPage() {
                             onClick={()=>setCommitment(c.id)}
                             style={!sel&&isBest?{background:"linear-gradient(135deg,#fffbeb,#fff7ed)",border:"2px dashed #fcd34d"}:{}}>
                             <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
-                              <div>
-                                <div style={{fontSize:14,fontWeight:700,color:"#0f172a"}}>{c.term}</div>
+                              <div style={{flex:1}}>
+                                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8}}>
+                                  <div style={{fontSize:14,fontWeight:700,color:"#0f172a"}}>{c.term}</div>
+                                  {selectedPlan&&planPrice>0&&(()=>{const m=c.id==="3month"?3:c.id==="6month"?6:c.id==="12month"?12:1;const d=c.id==="3month"?5:c.id==="6month"?10:c.id==="12month"?18:0;const gross=planPrice*m;const disc=Math.round(gross*d/100);return m>1?(<div style={{textAlign:"right",flexShrink:0}}><div style={{fontSize:13,fontWeight:800,color:"#4f46e5"}}>{inr(gross-disc)}</div><div style={{fontSize:10,color:"#94a3b8",textDecoration:"line-through"}}>{inr(gross)}</div></div>):null;})()}
+                                </div>
                                 <div style={{fontSize:11,color:"#64748b",marginTop:2,lineHeight:1.4}}>{c.perk}</div>
                               </div>
                               <div style={{flexShrink:0,marginLeft:8}}>
@@ -862,7 +879,17 @@ export function CustomerPlanPage() {
                             <div style={{fontSize:15,fontWeight:800,color:"#0f172a"}}>{pack.name}</div>
                             {dp>0&&<div style={{fontSize:22,fontWeight:800,color:colors[i],fontFamily:"'Playfair Display',serif",margin:"6px 0"}}>{inr(dp)}</div>}
                             {(pack as any).discount&&<span className="cpp-badge" style={{background:"rgba(16,185,129,0.12)",color:"#059669"}}>{(pack as any).discount}</span>}
-                            <div style={{fontSize:11,color:"#94a3b8",marginTop:8}}>{(pack as any).description}</div>
+                            {pack.id==="onetime"&&activeCat&&(
+                              <div style={{marginTop:10,borderTop:"1px dashed #e2e8f0",paddingTop:8}}>
+                                <div style={{fontSize:10,color:"#94a3b8",marginBottom:4,textTransform:"uppercase",letterSpacing:0.5}}>Prices for your {catLabel||"vehicle"}</div>
+                                {[["waterWash","💧 Water Wash"],["shampoo","🧴 Shampoo"],["shampooWax","✨ Shampoo+Wax"]].map(([wt,wlbl])=>{
+                                  const np=(pack as any).prices;const wObj=np?.[wt];const p=wObj?.[vehicleCat]??wObj?.hatchback??0;
+                                  const isSel=_washRef.current===wt;
+                                  return p>0?(<div key={wt} onClick={(e)=>{e.stopPropagation();setSelectedWashType(wt as string);}} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"4px 6px",borderRadius:6,background:isSel?"rgba(99,102,241,0.1)":"transparent",cursor:"pointer"}}><span style={{fontSize:11,color:isSel?"#4f46e5":"#64748b",fontWeight:isSel?700:400}}>{isSel?"✓ ":""}{wlbl}</span><span style={{fontSize:12,fontWeight:800,color:isSel?"#4f46e5":"#0f172a"}}>{inr(p)}</span></div>):null;
+                                })}
+                              </div>
+                            )}
+                            {pack.id!=="onetime"&&<div style={{fontSize:11,color:"#94a3b8",marginTop:8}}>{(pack as any).description}</div>}
                           </div>
                         </div>
                       );
@@ -894,7 +921,25 @@ export function CustomerPlanPage() {
           {/* ── STEP 4 ────────────────────────────────────────────────────── */}
           {step===4 && (
             <div style={{background:"rgba(255,255,255,0.8)",backdropFilter:"blur(16px)",borderRadius:24,padding:"32px",border:"1px solid rgba(255,255,255,0.8)",boxShadow:"0 8px 32px rgba(99,102,241,0.08)"}}>
-              <SectionHead n={4} total={6} title="Enhance your wash" sub="Optional add-ons billed per visit. Upgrade anytime." />
+              <SectionHead n={4} total={6} title="Enhance your wash" sub="Optional add-ons. For monthly plans, choose how many visits per month." />
+              {planMode==="monthly" && addons.length>0 && (
+                <div style={{marginBottom:20,padding:"14px 18px",background:"linear-gradient(135deg,#eff6ff,#f5f3ff)",border:"2px solid #c7d2fe",borderRadius:14}}>
+                  <div style={{fontSize:13,fontWeight:700,color:"#4338ca",marginBottom:10}}>📅 How many visits per month should add-ons apply?</div>
+                  <div style={{fontSize:12,color:"#6366f1",marginBottom:12}}>Your plan includes 30 washes/month. Add-ons are billed per visit based on your selection below.</div>
+                  <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                    {[1,2,4,8,15,30].map(v=>(
+                      <button key={v} onClick={()=>setAddonFreqMonth(v)}
+                        style={{padding:"8px 16px",borderRadius:50,border:`2px solid ${addonFreqMonth===v?"#6366f1":"rgba(148,163,184,0.3)"}`,background:addonFreqMonth===v?"linear-gradient(135deg,#6366f1,#8b5cf6)":"white",color:addonFreqMonth===v?"white":"#374151",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"'Sora',sans-serif",transition:"all 0.2s"}}>
+                        {v}×/mo
+                      </button>
+                    ))}
+                  </div>
+                  <div style={{marginTop:10,fontSize:12,color:"#4338ca"}}>
+                    Add-ons billed: <strong>{addonFreqMonth} visit{addonFreqMonth>1?"s":""}/month × {commitMonths} month{commitMonths>1?"s":""} = {addonFreqMonth*commitMonths} total visits</strong>
+                  </div>
+                </div>
+              )}
+
 
               {/* Combos */}
               {(cfg as any).comboBundles && (
@@ -1137,7 +1182,7 @@ export function CustomerPlanPage() {
                 {[
                   {icon:"🚗",label:"Vehicle",value:`${cfg.vehicleCategories.find(c=>c.id===activeCat)?.icon} ${catLabel}`,bg:"#eff6ff"},
                   {icon:"📍",label:"Area",value:`${cfg.serviceablePincodes.find(p=>p.code===pincode)?.label} — ${pincode}`,bg:"#f0fdf4"},
-                  {icon:"📋",label:"Plan",value:selectedPlan?`${cfg.monthlyPlans.find(p=>p.id===selectedPlan)?.icon} ${cfg.monthlyPlans.find(p=>p.id===selectedPlan)?.name} — ${inr(planPrice)}/month`:`${cfg.packs.find(p=>p.id===selectedPack)?.name} — ${inr(packPrice)}`,bg:"#f5f3ff"},
+                  {icon:"📋",label:"Plan",value:selectedPlan?`${cfg.monthlyPlans.find(p=>p.id===selectedPlan)?.icon} ${cfg.monthlyPlans.find(p=>p.id===selectedPlan)?.name} — ${inr(planPrice)}/mo${commitMonths>1?" × "+commitMonths+"mo = "+inr(planPrice*commitMonths):""}`:`${cfg.packs.find(p=>p.id===selectedPack)?.name} — ${inr(packPrice)}`,bg:"#f5f3ff"},
                   ...(addons.length>0?[{icon:"✨",label:"Add-ons",value:addons.map(id=>cfg.addons.find(a=>a.id===id)?.name).join(", "),bg:"#fffbeb"}]:[]),
                   {icon:"👤",label:"Name",value:custName,bg:"#f8fafc"},
                   {icon:"📱",label:"Mobile",value:custMobile,bg:"#f8fafc"},
@@ -1203,7 +1248,7 @@ export function CustomerPlanPage() {
 
         {/* Right: Cost panel */}
         <div>
-          <CostPanel step={step} activeCat={activeCat} vehicleCategories={cfg.vehicleCategories} selectedPlan={selectedPlan} planMode={planMode} selectedPack={selectedPack} planPrice={planPrice} packPrice={packPrice} addons={addons} addonTotal={addonTotal} total={total} commitment={commitment} commitments={cfg.commitments} cfg={cfg} vehicleCat={vehicleCat} basePrice={basePrice} couponDiscount={couponDiscount} referralDiscount={referralDiscount} promoDiscount={promoDiscount} couponCode={couponResult?.valid?couponResult.code:undefined} referralCode={referralResult?.valid?referralResult.code:undefined} />
+          <CostPanel step={step} activeCat={activeCat} vehicleCategories={cfg.vehicleCategories} selectedPlan={selectedPlan} planMode={planMode} selectedPack={selectedPack} planPrice={planPrice} packPrice={packPrice} addons={addons} addonTotal={addonTotal} total={total} commitment={commitment} commitments={cfg.commitments} cfg={cfg} vehicleCat={vehicleCat} basePrice={basePrice} couponDiscount={couponDiscount} referralDiscount={referralDiscount} promoDiscount={promoDiscount} couponCode={couponResult?.valid?couponResult.code:undefined} referralCode={referralResult?.valid?referralResult.code:undefined} commitMonths={commitMonths} addonFreqMonth={addonFreqMonth} addonGrandTotal={addonGrandTotal} />
         </div>
       </div>
 
