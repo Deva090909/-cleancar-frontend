@@ -894,7 +894,7 @@ export function CustomerPlanPage() {
                             {(pack as any).discount&&<span className="cpp-badge" style={{background:"rgba(16,185,129,0.12)",color:"#059669"}}>{(pack as any).discount}</span>}
                             {pack.id==="onetime"&&activeCat&&(
                               <div style={{marginTop:10,borderTop:"1px dashed #e2e8f0",paddingTop:8}}>
-                                <div style={{fontSize:10,color:"#94a3b8",marginBottom:4,textTransform:"uppercase",letterSpacing:0.5}}>Prices for your {catLabel||"vehicle"}</div>
+                                <div style={{fontSize:10,color:"#94a3b8",marginBottom:4,textTransform:"uppercase",letterSpacing:0.5}}>For your {vehicleCat==="suv"?"SUV / Sedan":vehicleCat==="luxury"?"Luxury SUV":"Hatchback"}</div>
                                 {[["waterWash","💧 Water Wash"],["shampoo","🧴 Shampoo"],["shampooWax","✨ Shampoo+Wax"]].map(([wt,wlbl])=>{
                                   const np=(pack as any).prices;const wObj=np?.[wt];const p=wObj?.[vehicleCat]??wObj?.hatchback??0;
                                   const isSel=_washRef.current===wt;
@@ -908,33 +908,33 @@ export function CustomerPlanPage() {
                                 <div style={{fontSize:10,fontWeight:700,color:"#64748b",marginBottom:6,letterSpacing:0.3}}>
                                   {pack.id==="pack2"?"8% SAVING VS SINGLE VISIT":"15% SAVING VS SINGLE VISIT"}
                                 </div>
-                                {/* Header row */}
-                                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:2,marginBottom:2}}>
-                                  {["Hatchback","SUV","Luxury"].map(h=>(
-                                    <div key={h} style={{background:"rgba(0,0,0,0.06)",borderRadius:4,padding:"3px 4px",fontSize:9,fontWeight:700,color:"#475569",textAlign:"center"}}>{h}</div>
-                                  ))}
+                                {/* Prices for selected vehicle only */}
+                                <div style={{fontSize:10,color:"#94a3b8",marginBottom:4,fontStyle:"italic"}}>
+                                  For your {vehicleCat==="suv"?"SUV / Sedan":vehicleCat==="luxury"?"Luxury SUV":"Hatchback"}:
                                 </div>
-                                {/* Price rows */}
                                 {[
-                                  {wt:"waterWash",label:"💧 Water",n:pack.id==="pack2"?2:4},
-                                  {wt:"shampoo",  label:"🧴 Shampoo",n:pack.id==="pack2"?2:4},
-                                  {wt:"shampooWax",label:"✨ +Wax",n:pack.id==="pack2"?2:4},
-                                ].map(({wt,label,n})=>{
+                                  {wt:"waterWash", label:"💧 Water Wash",    icon:"💧"},
+                                  {wt:"shampoo",   label:"🧴 Shampoo",        icon:"🧴"},
+                                  {wt:"shampooWax",label:"✨ Shampoo + Wax",  icon:"✨"},
+                                ].map(({wt,label})=>{
                                   const pr=(pack as any).prices?.[wt];
-                                  const h=pr?.hatchback??0, s=pr?.suv??0, l=pr?.luxury??0;
+                                  const p=vehicleCat==="suv"?pr?.suv:vehicleCat==="luxury"?pr?.luxury:pr?.hatchback;
+                                  if(!p) return null;
+                                  const n=pack.id==="pack2"?2:4;
                                   const isSel=_washRef.current===wt;
-                                  return h>0?(
+                                  return (
                                     <div key={wt}
                                       onClick={(e)=>{e.stopPropagation();setSelectedWashType(wt);}}
-                                      style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:2,marginBottom:2,cursor:"pointer",borderRadius:4,background:isSel?"rgba(99,102,241,0.08)":"transparent",outline:isSel?"2px solid #6366f1":"none"}}>
-                                      {[h,s,l].map((p,ci)=>(
-                                        <div key={ci} style={{padding:"3px 4px",textAlign:"center",fontSize:10,fontWeight:isSel?800:600,color:isSel?"#4338ca":"#0f172a",borderRadius:3}}>
-                                          {ci===0&&<span style={{display:"block",fontSize:8,color:"#94a3b8",marginBottom:1}}>{label}</span>}
-                                          {inr(p)}
-                                        </div>
-                                      ))}
+                                      style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"5px 8px",marginBottom:3,borderRadius:6,cursor:"pointer",background:isSel?"rgba(99,102,241,0.1)":"rgba(0,0,0,0.03)",border:isSel?"1.5px solid #6366f1":"1.5px solid transparent",transition:"all 0.15s"}}>
+                                      <span style={{fontSize:11,fontWeight:isSel?700:500,color:isSel?"#4338ca":"#374151"}}>
+                                        {isSel&&<span style={{marginRight:4}}>✓</span>}{label}
+                                      </span>
+                                      <div style={{textAlign:"right"}}>
+                                        <div style={{fontSize:13,fontWeight:800,color:isSel?"#4338ca":colors[i]}}>{inr(p)}</div>
+                                        <div style={{fontSize:9,color:"#94a3b8"}}>{inr(Math.round(p/n))}/visit</div>
+                                      </div>
                                     </div>
-                                  ):null;
+                                  );
                                 })}
                                 {/* Per-visit for selected */}
                                 {(()=>{
@@ -944,7 +944,7 @@ export function CustomerPlanPage() {
                                   const days=pack.id==="pack2"?20:30;
                                   return pv?(
                                     <div style={{marginTop:6,padding:"5px 8px",background:"rgba(16,185,129,0.08)",borderRadius:6,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                                      <span style={{fontSize:10,color:"#065f46",fontWeight:600}}>Your {vehicleCat}: {inr(Math.round(pv/n))}/visit</span>
+                                      <span style={{fontSize:10,color:"#065f46",fontWeight:600}}>{inr(Math.round(pv/n))}/visit · {pack.id==="pack2"?"2 visits":"4 visits"}</span>
                                       <span style={{fontSize:10,color:"#94a3b8"}}>Valid {days}d</span>
                                     </div>
                                   ):null;
