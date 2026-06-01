@@ -1,3 +1,4 @@
+import { ErrorBoundary } from "../ErrorBoundary";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { Outlet, Link, useLocation, Navigate, useNavigate } from "react-router-dom";
 import {
