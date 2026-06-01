@@ -1,12 +1,17 @@
 import { IncentivePayoutLedger } from "../incentives/IncentivePayoutLedger";
 import { useState } from "react";
 import { SubscriptionIncentiveTracker } from "../incentives/SubscriptionIncentiveTracker";
+import { useRole } from "../../contexts/RoleContext";
 
 /**
  * TSEIncentiveTracker — tab wrapper: Overview | Payout Ledger
+ * I-01 FIX: reads employeeId from RoleContext when not passed as prop
  */
 export function TSEIncentiveTracker({ tseId, name }: { tseId?: string; name?: string }) {
-  const id  = tseId || "EDB-TSE-SUR1";
+  const { currentUser } = useRole();
+  // I-01 FIX: was hardcoded "EDB-TSE-SUR1" — now uses logged-in user's id
+  const id   = tseId  || currentUser?.employeeId || "";
+  const displayName = name || currentUser?.name || "TSE";
   const [tab, setTab] = useState<"overview" | "ledger">("overview");
 
   return (
@@ -29,7 +34,7 @@ export function TSEIncentiveTracker({ tseId, name }: { tseId?: string; name?: st
       {tab === "ledger" ? (
         <IncentivePayoutLedger employeeId={id} role="TSE" />
       ) : (
-        <SubscriptionIncentiveTracker employeeId={id} role="TSE" name={name} />
+        <SubscriptionIncentiveTracker employeeId={id} role="TSE" name={displayName} />
       )}
     </div>
   );

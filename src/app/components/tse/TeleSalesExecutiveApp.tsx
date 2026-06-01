@@ -36,6 +36,7 @@ import { TSEActiveCall } from "./TSEActiveCall";
 import { TSECRMUpdate } from "./TSECRMUpdate";
 import { TSEIncentiveTracker } from "./TSEIncentiveTracker";
 import { teleSalesExecutiveService } from "../../services/teleSalesExecutiveService";
+import { useRole } from "../../contexts/RoleContext"; // I-01 FIX
 import type {
   TSELead,
   TSEDailyStats,
@@ -58,6 +59,7 @@ interface ActiveCallSession {
 }
 
 export function TeleSalesExecutiveApp() {
+  const { currentUser } = useRole(); // I-01 FIX: for passing real employeeId to TSEIncentiveTracker
   const [searchParams] = useSearchParams();
 
   // Initialize screen based on URL tab parameter
@@ -437,7 +439,10 @@ export function TeleSalesExecutiveApp() {
           />
         )}
 
-        {currentScreen === "INCENTIVE_TRACKER" && <TSEIncentiveTracker />}
+        {currentScreen === "INCENTIVE_TRACKER" && (
+          // I-01 FIX: pass real employeeId + name so each TSE sees their own data
+          <TSEIncentiveTracker tseId={currentUser?.employeeId} name={currentUser?.name} />
+        )}
       </div>
     </div>
   );
