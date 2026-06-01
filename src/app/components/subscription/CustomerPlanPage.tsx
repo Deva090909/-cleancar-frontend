@@ -64,9 +64,9 @@ export const DEFAULT_CONFIG: PlanPageConfig = {
       prices:{hatchback:1999,suv:2499,luxury:3499} },
   ],
   packs: [
-    { id:"onetime", name:"One-Time", icon:"1️⃣", description:"Single visit — choose your wash type", prices:{waterWash:{hatchback:199,suv:299,luxury:399},shampoo:{hatchback:299,suv:349,luxury:499},shampooWax:{hatchback:399,suv:499,luxury:699}}, discount:"Standard rate", validityDays:null },
-    { id:"pack2",   name:"Pack of 2", icon:"🔁", description:"Pre-buy 2 visits — 8% saving. Use within 20 days.", prices:{waterWash:{hatchback:370,suv:550,luxury:730},shampoo:{hatchback:550,suv:640,luxury:920},shampooWax:{hatchback:730,suv:920,luxury:1290}}, discount:"8% off", validityDays:20 },
-    { id:"pack4",   name:"Pack of 4", icon:"📅", description:"Pre-buy 4 visits — 15% saving. Use within 30 days.", prices:{waterWash:{hatchback:680,suv:1020,luxury:1360},shampoo:{hatchback:1020,suv:1180,luxury:1700},shampooWax:{hatchback:1360,suv:1700,luxury:2380}}, discount:"15% off", validityDays:30 },
+    { id:"onetime", name:"One-Time", icon:"1️⃣", description:"Single visit. No expiry. Pay & book on the day.", prices:{waterWash:{hatchback:199,suv:299,luxury:399},shampoo:{hatchback:299,suv:349,luxury:499},shampooWax:{hatchback:399,suv:499,luxury:699}}, discount:"Standard rate", validityDays:null },
+    { id:"pack2",   name:"Pack of 2", icon:"🔁", description:"2 visits · 8% off single price · Valid 20 days · Mix wash types · 1 car only", prices:{waterWash:{hatchback:370,suv:550,luxury:730},shampoo:{hatchback:550,suv:640,luxury:920},shampooWax:{hatchback:730,suv:920,luxury:1290}}, discount:"8% off", validityDays:20 },
+    { id:"pack4",   name:"Pack of 4", icon:"📅", description:"4 visits · 15% off single price · Valid 30 days · Mix wash types · 1 car only", prices:{waterWash:{hatchback:680,suv:1020,luxury:1360},shampoo:{hatchback:1020,suv:1180,luxury:1700},shampooWax:{hatchback:1360,suv:1700,luxury:2380}}, discount:"15% off", validityDays:30 },
   ],
   commitments: [
     {id:"monthly",  term:"Month to Month",discountLabel:"No lock-in", perk:"Cancel anytime. 7 days' notice."},
@@ -802,7 +802,7 @@ export function CustomerPlanPage() {
               {/* Monthly plans */}
               {planMode==="monthly" && (
                 <>
-                  <div className="cpp-plan-grid" style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:16,marginBottom:28}}>
+                  <div className="cpp-plan-grid" style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:16,marginBottom:28,alignItems:"start"}}>
                     {cfg.monthlyPlans.map((plan,i)=>{
                       const price=plan.prices[activeCat||"hatchback"]||0;
                       const pw=Math.round(price/30);
@@ -872,7 +872,7 @@ export function CustomerPlanPage() {
               {/* Pack mode */}
               {planMode==="pack" && (
                 <>
-                  <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14,marginBottom:24}}>
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14,marginBottom:24,alignItems:"start"}}>
                     {cfg.packs.map((pack,i)=>{
                       const nested=(pack as any).prices;
                       let dp=0;
@@ -902,15 +902,64 @@ export function CustomerPlanPage() {
                                 })}
                               </div>
                             )}
-                            {pack.id!=="onetime"&&<div style={{fontSize:11,color:"#94a3b8",marginTop:8}}>{(pack as any).description}</div>}
+                            {pack.id!=="onetime"&&(
+                              <div style={{marginTop:8}}>
+                                {/* Full price table for pack2/pack4 */}
+                                <div style={{fontSize:10,fontWeight:700,color:"#64748b",marginBottom:6,letterSpacing:0.3}}>
+                                  {pack.id==="pack2"?"8% SAVING VS SINGLE VISIT":"15% SAVING VS SINGLE VISIT"}
+                                </div>
+                                {/* Header row */}
+                                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:2,marginBottom:2}}>
+                                  {["Hatchback","SUV","Luxury"].map(h=>(
+                                    <div key={h} style={{background:"rgba(0,0,0,0.06)",borderRadius:4,padding:"3px 4px",fontSize:9,fontWeight:700,color:"#475569",textAlign:"center"}}>{h}</div>
+                                  ))}
+                                </div>
+                                {/* Price rows */}
+                                {[
+                                  {wt:"waterWash",label:"💧 Water",n:pack.id==="pack2"?2:4},
+                                  {wt:"shampoo",  label:"🧴 Shampoo",n:pack.id==="pack2"?2:4},
+                                  {wt:"shampooWax",label:"✨ +Wax",n:pack.id==="pack2"?2:4},
+                                ].map(({wt,label,n})=>{
+                                  const pr=(pack as any).prices?.[wt];
+                                  const h=pr?.hatchback??0, s=pr?.suv??0, l=pr?.luxury??0;
+                                  const isSel=_washRef.current===wt;
+                                  return h>0?(
+                                    <div key={wt}
+                                      onClick={(e)=>{e.stopPropagation();setSelectedWashType(wt);}}
+                                      style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:2,marginBottom:2,cursor:"pointer",borderRadius:4,background:isSel?"rgba(99,102,241,0.08)":"transparent",outline:isSel?"2px solid #6366f1":"none"}}>
+                                      {[h,s,l].map((p,ci)=>(
+                                        <div key={ci} style={{padding:"3px 4px",textAlign:"center",fontSize:10,fontWeight:isSel?800:600,color:isSel?"#4338ca":"#0f172a",borderRadius:3}}>
+                                          {ci===0&&<span style={{display:"block",fontSize:8,color:"#94a3b8",marginBottom:1}}>{label}</span>}
+                                          {inr(p)}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  ):null;
+                                })}
+                                {/* Per-visit for selected */}
+                                {(()=>{
+                                  const pr=(pack as any).prices?.[_washRef.current];
+                                  const pv=vehicleCat==="suv"?pr?.suv:vehicleCat==="luxury"?pr?.luxury:pr?.hatchback;
+                                  const n=pack.id==="pack2"?2:4;
+                                  const days=pack.id==="pack2"?20:30;
+                                  return pv?(
+                                    <div style={{marginTop:6,padding:"5px 8px",background:"rgba(16,185,129,0.08)",borderRadius:6,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                                      <span style={{fontSize:10,color:"#065f46",fontWeight:600}}>Your {vehicleCat}: {inr(Math.round(pv/n))}/visit</span>
+                                      <span style={{fontSize:10,color:"#94a3b8"}}>Valid {days}d</span>
+                                    </div>
+                                  ):null;
+                                })()}
+                                <div style={{fontSize:9,color:"#94a3b8",marginTop:5,lineHeight:1.4}}>{(pack as any).description}</div>
+                              </div>
+                            )}
                           </div>
                         </div>
                       );
                     })}
                   </div>
-                  {/* Wash type hint */}
-                  <div style={{marginTop:8,marginBottom:4,fontSize:12,color:"#94a3b8",textAlign:"center"}}>
-                    💡 Prices above are for <strong style={{color:"#6366f1"}}>{_washRef.current==="waterWash"?"Water Wash":_washRef.current==="shampooWax"?"Shampoo+Wax":"Shampoo"}</strong> — change wash type below
+                  {/* Pack T&C note */}
+                  <div style={{marginTop:10,padding:"10px 14px",background:"rgba(248,250,252,0.9)",border:"1px solid #e2e8f0",borderRadius:10,fontSize:11,color:"#64748b",lineHeight:1.6}}>
+                    <strong style={{color:"#374151"}}>Pack terms:</strong> Packs expire after validity period. No rollover. Visits can be mixed — e.g. one Water Wash + one Shampoo Wash. One visit per day. Pack is for <strong>one vehicle only</strong> and cannot be split.
                   </div>
                   {selectedPack&&(
                     <div style={{padding:"16px 20px",background:"linear-gradient(135deg,#f5f3ff,#ede9fe)",borderRadius:16,marginBottom:24,border:"2px solid #ddd6fe"}}>
