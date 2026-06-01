@@ -13,14 +13,12 @@ export function RouteGuard() {
   // isLoaded tells us when EmployeeContext has finished its initial localStorage read.
   // Without this guard, RouteGuard can fire with employees=[] on first render and
   // incorrectly redirect users away from valid routes.
-  const { employees, isLoaded } = useEmployee();
+  const { employees } = useEmployee();
 
   useEffect(() => {
     // Wait until EmployeeContext has loaded from localStorage before checking access.
     // employees initialises synchronously so isLoaded is true almost immediately,
     // but this prevents any edge-case race on very first render.
-    if (!isLoaded) return;
-
     if (isPublicRoute(location.pathname)) return;
 
     const routeConfig = getRouteConfig(location.pathname);
@@ -55,7 +53,7 @@ export function RouteGuard() {
   // NOTE: "employees" intentionally removed from deps.
   // RouteGuard should NOT re-run permission checks on every HR edit elsewhere in the app.
   // It only needs to check on route change, role change, user change, or initial load.
-  }, [location.pathname, currentUser, currentRole, isLoaded, navigate]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [location.pathname, currentUser, currentRole, navigate]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return null;
 }
