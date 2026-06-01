@@ -773,8 +773,8 @@ export function RootLayout() {
         {/* Main Content — key forces remount on every route/role change */}
         <main className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 lg:p-8 min-w-0">
           <RouteGuard />
-          {/* key on Outlet forces remount whenever the route path changes */}
-          <Outlet key={location.pathname} />
+          {/* key forces remount on path change OR role change */}
+          <Outlet key={`${location.pathname}__${currentRole}`} />
         </main>
       </div>
 
