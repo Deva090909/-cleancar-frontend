@@ -46,7 +46,9 @@ function AppContent() {
 export default function App() {
   return (
     <ErrorBoundary>
-      <AppContent />
+      <AppProvider>
+        <AppContent />
+      </AppProvider>
     </ErrorBoundary>
   );
 }
