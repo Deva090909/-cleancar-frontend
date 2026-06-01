@@ -1,6 +1,5 @@
-// CustomerPlanPage.tsx — Redesigned 2026
-// Premium Amazon/Jio-style checkout with live cost panel
-// Preserves ALL business logic, state, contexts from original
+// CustomerPlanPage.tsx — Premium Redesign v2
+// Classy, colorful, interactive checkout with glassmorphism, gradients & animations
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useFinance } from "../../contexts/FinanceContext";
@@ -8,12 +7,11 @@ import { useCustomers } from "../../contexts/AppProvider";
 import { useCustomerSubscriptions } from "../../contexts/AppProvider";
 import { useCity } from "../../contexts/CityContext";
 
-// ─── CONFIG TYPES (unchanged from original) ───────────────────────────────────
+// ─── CONFIG TYPES ─────────────────────────────────────────────────────────────
 export interface PlanPageConfig {
   brand: { name: string; tagline: string; phone: string; whatsappNumber: string };
   hero: { badge: string; headline: string; headlineAccent: string; subheadline: string };
-  trustItems: string[];
-  trustStrip: string[];
+  trustItems: string[]; trustStrip: string[];
   vehicleCategories: VehicleCategoryConfig[];
   carModelMap: Record<string, string>;
   serviceablePincodes: { code: string; label: string }[];
@@ -27,19 +25,19 @@ export interface PlanPageConfig {
 }
 export interface VehicleCategoryConfig { id: string; label: string; icon: string; }
 export interface MonthlyPlanConfig { id: string; name: string; icon: string; tagline: string; popular?: boolean; features: { text: string; included: boolean }[]; prices: Record<string, number>; }
-export interface PackConfig { id: string; name: string; icon: string; price?: number; perLabel?: string; discount?: string; prices?: any; description?: string; validityDays?: number; perVisitLabel?: string; }
+export interface PackConfig { id: string; name: string; icon: string; price?: number; perLabel?: string; discount?: string; prices?: any; description?: string; validityDays?: number | null; perVisitLabel?: string; }
 export interface CommitmentConfig { id: string; term: string; discountLabel: string; perk: string; highlight?: "best" | "great"; }
-export interface AddonConfig { id: string; name: string; price: number; unit: string; description: string; prices?: Record<string,number>; }
+export interface AddonConfig { id: string; name: string; price: number; unit: string; description: string; prices?: Record<string, number>; }
 
 export const DEFAULT_CONFIG: PlanPageConfig = {
   brand: { name: "249 Carwashing", tagline: "Daily car wash at your doorstep", phone: "+91 82387 05601", whatsappNumber: "918238705601" },
-  hero: { badge: "🚗 Surat's #1 Daily Car Wash Service", headline: "Your car, clean", headlineAccent: "every single day.", subheadline: "Professional doorstep car wash — before you wake up, after every drive. Photos after every wash on WhatsApp." },
-  trustItems: ["📸 Before & after photos every wash","🔄 Free re-wash within 24h","🏠 We come to you","📞 Cancel anytime"],
-  trustStrip: ["🔒 Razorpay secured payments","📸 Before & after photos every wash","🔄 Free re-wash within 24 hours","📞 7-day cancellation — no questions asked","🏠 We come to you — home, office, society"],
+  hero: { badge: "🚗 Surat's #1 Daily Car Wash", headline: "Your car, clean", headlineAccent: "every single day.", subheadline: "Professional doorstep car wash — photos after every wash on WhatsApp." },
+  trustItems: ["📸 Before & after photos","🔄 Free re-wash 24h","🏠 We come to you","📞 Cancel anytime"],
+  trustStrip: ["🔒 Razorpay secured","📸 Before & after photos","🔄 Free re-wash 24h","📞 7-day cancellation","🏠 Home, office, society"],
   vehicleCategories: [
-    { id: "hatchback", label: "Hatchback / Compact Sedan", icon: "🚗" },
-    { id: "suv",       label: "SUV / Sedan / MUV",         icon: "🚙" },
-    { id: "luxury",    label: "Luxury / Large SUV",         icon: "🏎️" },
+    { id: "hatchback", label: "Hatchback", icon: "🚗" },
+    { id: "suv", label: "SUV / Sedan", icon: "🚙" },
+    { id: "luxury", label: "Luxury SUV", icon: "🏎️" },
   ],
   carModelMap: {
     swift:"hatchback",baleno:"hatchback",i20:"hatchback",tiago:"hatchback",dzire:"hatchback",alto:"hatchback",wagon:"hatchback",figo:"hatchback",polo:"hatchback",jazz:"hatchback",amaze:"hatchback",tigor:"hatchback",
@@ -47,110 +45,199 @@ export const DEFAULT_CONFIG: PlanPageConfig = {
     fortuner:"luxury",xuv700:"luxury",meridian:"luxury",scorpio:"luxury",endeavour:"luxury",harrier:"luxury",safari:"luxury",gloster:"luxury",hilux:"luxury",crysta:"luxury",
   },
   serviceablePincodes: [
-    { code:"395007",label:"Vesu / Pal" },{ code:"395005",label:"Piplod / Citylight" },
-    { code:"395009",label:"Adajan" },{ code:"395010",label:"Bhatar / Katargam" },
-    { code:"395004",label:"Varachha" },{ code:"395006",label:"Udhna / Sagrampura" },
-    { code:"395003",label:"Athwa / Ring Road" },{ code:"395001",label:"Nanpura / Ghod Dod" },
-    { code:"395002",label:"Rander / Jahangirpura" },{ code:"394510",label:"Althan / Dumas Road" },
+    {code:"395007",label:"Vesu / Pal"},{code:"395005",label:"Piplod / Citylight"},
+    {code:"395009",label:"Adajan"},{code:"395010",label:"Bhatar / Katargam"},
+    {code:"395004",label:"Varachha"},{code:"395006",label:"Udhna / Sagrampura"},
+    {code:"395003",label:"Athwa / Ring Road"},{code:"395001",label:"Nanpura / Ghod Dod"},
+    {code:"395002",label:"Rander / Jahangirpura"},{code:"394510",label:"Althan / Dumas Road"},
   ],
   monthlyPlans: [
-    { id:"water", name:"Express Wash", icon:"✨", tagline:"Chamakti Subah — your car, clean every morning", popular:false,
-      features:[{text:"Exterior rinse + wipe",included:true},{text:"Tyre & rim wipe",included:true},{text:"Wiper fluid top-up",included:true},{text:"Before & after photo",included:true},{text:"Shampoo",included:false},{text:"Interior",included:false}],
-      prices:{ hatchback:1249, suv:1499, luxury:1999 } },
-    { id:"shampoo", name:"Smart Wash", icon:"🧴", tagline:"Naya Jaisa — full shampoo wash, every single day", popular:true,
-      features:[{text:"Full shampoo exterior wash",included:true},{text:"Tyre & rim scrub",included:true},{text:"Wiper fluid top-up",included:true},{text:"Before & after photo",included:true},{text:"Interior basic wipe",included:true},{text:"Wax polish",included:false}],
-      prices:{ hatchback:1599, suv:1999, luxury:2699 } },
-    { id:"wax", name:"Elite Wash", icon:"🏆", tagline:"Showroom Wala Feel — premium daily care", popular:false,
-      features:[{text:"Shampoo wash",included:true},{text:"Hand wax polish",included:true},{text:"Interior deep wipe",included:true},{text:"Before & after photo",included:true},{text:"Priority time slot",included:true},{text:"Monthly tyre dressing",included:true}],
-      prices:{ hatchback:1999, suv:2499, luxury:3499 } },
+    { id:"water", name:"Express Wash", icon:"⚡", tagline:"Clean every morning before you wake up",
+      popular:false, features:[{text:"Exterior rinse & wipe",included:true},{text:"Tyre & rim wipe",included:true},{text:"Wiper fluid top-up",included:true},{text:"Before & after photo",included:true},{text:"Shampoo wash",included:false},{text:"Interior clean",included:false}],
+      prices:{hatchback:1249,suv:1499,luxury:1999} },
+    { id:"shampoo", name:"Smart Wash", icon:"✨", tagline:"Full shampoo wash, showroom fresh daily",
+      popular:true, features:[{text:"Full shampoo exterior",included:true},{text:"Tyre & rim scrub",included:true},{text:"Wiper fluid top-up",included:true},{text:"Before & after photo",included:true},{text:"Interior wipe-down",included:true},{text:"Wax polish",included:false}],
+      prices:{hatchback:1599,suv:1999,luxury:2699} },
+    { id:"wax", name:"Elite Wash", icon:"👑", tagline:"Premium daily care — showroom feel every day",
+      popular:false, features:[{text:"Full shampoo wash",included:true},{text:"Hand wax polish",included:true},{text:"Interior deep wipe",included:true},{text:"Before & after photo",included:true},{text:"Priority time slot",included:true},{text:"Monthly tyre dressing",included:true}],
+      prices:{hatchback:1999,suv:2499,luxury:3499} },
   ],
   packs: [
-    { id:"onetime", name:"One-Time Visit", icon:"1️⃣", description:"Single visit — Water Wash, Shampoo, or Shampoo+Wax", prices:{ waterWash:{hatchback:199,suv:299,luxury:399}, shampoo:{hatchback:299,suv:349,luxury:499}, shampooWax:{hatchback:399,suv:499,luxury:699} }, discount:"Standard rate", validityDays:null as any },
-    { id:"pack2", name:"Pack of 2", icon:"🔁", description:"Pre-buy 2 visits — 8% saving. Use within 20 days.", prices:{ waterWash:{hatchback:370,suv:550,luxury:730}, shampoo:{hatchback:550,suv:640,luxury:920}, shampooWax:{hatchback:730,suv:920,luxury:1290} }, discount:"8% off", validityDays:20 },
-    { id:"pack4", name:"Pack of 4", icon:"📅", description:"Pre-buy 4 visits — 15% saving. Use within 30 days.", prices:{ waterWash:{hatchback:680,suv:1020,luxury:1360}, shampoo:{hatchback:1020,suv:1180,luxury:1700}, shampooWax:{hatchback:1360,suv:1700,luxury:2380} }, discount:"15% off", validityDays:30 },
+    { id:"onetime", name:"One-Time", icon:"1️⃣", description:"Single visit — choose your wash type", prices:{waterWash:{hatchback:199,suv:299,luxury:399},shampoo:{hatchback:299,suv:349,luxury:499},shampooWax:{hatchback:399,suv:499,luxury:699}}, discount:"Standard rate", validityDays:null },
+    { id:"pack2",   name:"Pack of 2", icon:"🔁", description:"Pre-buy 2 visits — 8% saving. Use within 20 days.", prices:{waterWash:{hatchback:370,suv:550,luxury:730},shampoo:{hatchback:550,suv:640,luxury:920},shampooWax:{hatchback:730,suv:920,luxury:1290}}, discount:"8% off", validityDays:20 },
+    { id:"pack4",   name:"Pack of 4", icon:"📅", description:"Pre-buy 4 visits — 15% saving. Use within 30 days.", prices:{waterWash:{hatchback:680,suv:1020,luxury:1360},shampoo:{hatchback:1020,suv:1180,luxury:1700},shampooWax:{hatchback:1360,suv:1700,luxury:2380}}, discount:"15% off", validityDays:30 },
   ],
   commitments: [
-    { id:"monthly",  term:"Month to Month", discountLabel:"No lock-in",  perk:"Cancel anytime. 7 days' notice." },
-    { id:"3month",   term:"3 Months",       discountLabel:"5% off",      perk:"On renewal. ₹225 saving on Hatchback Shampoo." },
-    { id:"6month",   term:"6 Months",       discountLabel:"10% off",     perk:"Renewal + free interior vacuum every month.", highlight:"great" },
-    { id:"12month",  term:"12 Months",      discountLabel:"18% off",     perk:"Renewal + vacuum + tyre dressing monthly + priority slots.", highlight:"best" },
+    {id:"monthly",  term:"Month to Month",discountLabel:"No lock-in", perk:"Cancel anytime. 7 days' notice."},
+    {id:"3month",   term:"3 Months",      discountLabel:"5% off",     perk:"₹225 saving on Hatchback Shampoo."},
+    {id:"6month",   term:"6 Months",      discountLabel:"10% off",    perk:"Renewal + free vacuum monthly.", highlight:"great"},
+    {id:"12month",  term:"12 Months",     discountLabel:"18% off",    perk:"Vacuum + tyre dressing + priority.", highlight:"best"},
   ],
   comboBundles: [
-    { id:"andar-se-sundar", name:"Andar Se Sundar", addonIds:["vacuum","dashboard"], prices:{hatchback:299,suv:399,luxury:549}, savings:{hatchback:49,suv:49,luxury:49} },
-    { id:"showroom-shine",  name:"Showroom Shine Pack", addonIds:["waxpolish","vacuum","dashboard"], prices:{hatchback:849,suv:1099,luxury:1399}, savings:{hatchback:198,suv:248,luxury:348} },
+    {id:"andar-se-sundar", name:"Andar Se Sundar 🌟", addonIds:["vacuum","dashboard"], prices:{hatchback:299,suv:399,luxury:549}, savings:{hatchback:49,suv:49,luxury:49}},
+    {id:"showroom-shine",  name:"Showroom Shine Pack ✨", addonIds:["waxpolish","vacuum","dashboard"], prices:{hatchback:849,suv:1099,luxury:1399}, savings:{hatchback:198,suv:248,luxury:348}},
   ],
   addons: [
-    { id:"vacuum",    name:"Interior Deep Vacuum",        price:199, unit:"per visit", prices:{hatchback:199,suv:249,luxury:349}, description:"Seats, mats, footwells, boot area. Before+after photo." },
-    { id:"dashboard", name:"Dashboard & Console Detail",  price:149, unit:"per visit", prices:{hatchback:149,suv:199,luxury:249}, description:"Dashboard, console, door pads cleaned & polished." },
-    { id:"tyre",      name:"Tyre Dressing (all 4)",       price:99,  unit:"per visit", prices:{hatchback:99,suv:149,luxury:199},  description:"Shampoo + shine protect on all 4 tyres & mudguards." },
-    { id:"waxpolish", name:"Full Hand Wax Polish",        price:199, unit:"per visit", prices:{hatchback:199,suv:249,luxury:399}, description:"Full body panel-by-panel wax. Outer body only." },
-    { id:"underbody", name:"Underbody Wash",              price:199, unit:"per visit", prices:{hatchback:199,suv:249,luxury:349}, description:"Pressure wash — removes mud, grime, road salt." },
-    { id:"enginebay", name:"Engine Bay Wipe-Down",        price:99,  unit:"per visit", prices:{hatchback:99,suv:149,luxury:199},  description:"Dry blow only — no water. Removes dust safely." },
-    { id:"fragrance", name:"Car Fragrance",               price:49,  unit:"per visit", prices:{hatchback:49,suv:49,luxury:49},    description:"Fresh interior fragrance spray. ₹49 all vehicles." },
+    {id:"vacuum",    name:"Interior Deep Vacuum",     price:199,unit:"per visit",prices:{hatchback:199,suv:249,luxury:349},description:"Seats, mats, footwells & boot area cleaned"},
+    {id:"dashboard", name:"Dashboard & Console",      price:149,unit:"per visit",prices:{hatchback:149,suv:199,luxury:249},description:"Dashboard polish, console & door pads"},
+    {id:"tyre",      name:"Tyre Dressing (all 4)",    price:99, unit:"per visit",prices:{hatchback:99,suv:149,luxury:199},description:"Shine & protect all 4 tyres & mudguards"},
+    {id:"waxpolish", name:"Full Hand Wax Polish",     price:199,unit:"per visit",prices:{hatchback:199,suv:249,luxury:399},description:"Panel-by-panel wax. Outer body only."},
+    {id:"underbody", name:"Underbody Wash",           price:199,unit:"per visit",prices:{hatchback:199,suv:249,luxury:349},description:"Removes mud, grime & road salt"},
+    {id:"enginebay", name:"Engine Bay Wipe-Down",     price:99, unit:"per visit",prices:{hatchback:99,suv:149,luxury:199},description:"Dry blow — removes dust safely"},
+    {id:"fragrance", name:"Car Fragrance",            price:49, unit:"per visit",prices:{hatchback:49,suv:49,luxury:49},  description:"Fresh interior fragrance spray"},
   ],
   timeSlots: ["Early morning (5am – 7am)","Morning (7am – 9am)","Late morning (9am – 11am)","Afternoon (11am – 1pm)","Evening (5pm – 7pm)"],
-  postPaymentSteps: ["Receipt sent to your WhatsApp immediately","Confirmation call within 1 working day","Service activates within 2 working days","Before & after photos after every wash"],
+  postPaymentSteps: ["Receipt on WhatsApp immediately","Confirmation call within 1 working day","Service starts within 2 working days","Before & after photos after every wash"],
 };
 
 function loadConfig(): PlanPageConfig {
-  try { const raw = localStorage.getItem("cleancar_plan_page_config"); if (raw) return { ...DEFAULT_CONFIG, ...JSON.parse(raw) }; } catch {}
+  try { const r = localStorage.getItem("cleancar_plan_page_config"); if (r) return {...DEFAULT_CONFIG,...JSON.parse(r)}; } catch {}
   return DEFAULT_CONFIG;
 }
 
 const inr = (n: number) => "₹" + n.toLocaleString("en-IN");
 
-// ─── STYLES ───────────────────────────────────────────────────────────────────
-const S = {
-  // Palette — matches 24/9 brand: deep navy + sky blue + clean white
-  navy:   "#0B1F3A",
-  blue:   "#1B6FD8",
-  blueL:  "#EBF3FF",
-  green:  "#0A8A5A",
-  greenL: "#E6F8F1",
-  amber:  "#D97706",
-  amberL: "#FEF3C7",
-  gray:   "#64748B",
-  border: "#E2E8F0",
-  bg:     "#F7F9FC",
-  white:  "#FFFFFF",
-};
+// ─── GLOBAL STYLES ────────────────────────────────────────────────────────────
+const GLOBAL_CSS = `
+  @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap');
 
-// ─── STEP INDICATOR ───────────────────────────────────────────────────────────
-const STEP_LABELS = ["Car","Area","Plan","Add-ons","Details","Review"];
-function StepBar({ step, goTo }: { step: number; goTo: (n: number) => void }) {
+  .cpp-root * { box-sizing: border-box; }
+  .cpp-root { font-family: 'Sora', sans-serif; }
+
+  .cpp-input {
+    width: 100%; padding: 14px 16px; border-radius: 12px; font-size: 15px;
+    font-family: 'Sora', sans-serif; transition: all 0.2s; background: rgba(255,255,255,0.9);
+    border: 2px solid rgba(148,163,184,0.3); color: #0f172a; outline: none;
+    backdrop-filter: blur(8px);
+  }
+  .cpp-input:focus { border-color: #6366f1; box-shadow: 0 0 0 4px rgba(99,102,241,0.15); }
+
+  .cpp-card {
+    border-radius: 18px; padding: 20px; cursor: pointer;
+    border: 2px solid transparent; transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    background: rgba(255,255,255,0.85); backdrop-filter: blur(12px);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  }
+  .cpp-card:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(0,0,0,0.12); }
+  .cpp-card.selected {
+    border-color: #6366f1; background: linear-gradient(135deg, #eef2ff 0%, #f0fdff 100%);
+    box-shadow: 0 0 0 4px rgba(99,102,241,0.2), 0 8px 24px rgba(99,102,241,0.15);
+    transform: translateY(-2px);
+  }
+  .cpp-card.gold-selected {
+    border-color: #f59e0b; background: linear-gradient(135deg, #fffbeb 0%, #fff7ed 100%);
+    box-shadow: 0 0 0 4px rgba(245,158,11,0.2), 0 8px 24px rgba(245,158,11,0.15);
+  }
+
+  .cpp-btn-primary {
+    padding: 15px 36px; border-radius: 50px; border: none; cursor: pointer;
+    font-family: 'Sora', sans-serif; font-weight: 700; font-size: 15px;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: white; transition: all 0.2s;
+    box-shadow: 0 6px 20px rgba(99,102,241,0.4);
+  }
+  .cpp-btn-primary:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(99,102,241,0.5); }
+  .cpp-btn-primary:active:not(:disabled) { transform: translateY(0); }
+  .cpp-btn-primary:disabled { background: #cbd5e1; box-shadow: none; cursor: not-allowed; }
+
+  .cpp-btn-ghost {
+    padding: 14px 24px; border-radius: 50px; font-family: 'Sora', sans-serif;
+    font-weight: 600; font-size: 14px; cursor: pointer;
+    background: transparent; color: #64748b;
+    border: 2px solid rgba(148,163,184,0.4); transition: all 0.2s;
+  }
+  .cpp-btn-ghost:hover { background: rgba(99,102,241,0.06); border-color: #6366f1; color: #6366f1; }
+
+  .cpp-step-in { animation: stepIn 0.35s cubic-bezier(0.34, 1.2, 0.64, 1); }
+  @keyframes stepIn { from { opacity: 0; transform: translateX(24px) scale(0.98); } to { opacity: 1; transform: translateX(0) scale(1); } }
+
+  .cpp-pulse { animation: pulse-glow 2s infinite; }
+  @keyframes pulse-glow { 0%,100% { box-shadow: 0 0 0 0 rgba(99,102,241,0.3); } 50% { box-shadow: 0 0 0 8px rgba(99,102,241,0); } }
+
+  .cpp-shimmer { position: relative; overflow: hidden; }
+  .cpp-shimmer::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+    animation: shimmer 2s infinite;
+  }
+  @keyframes shimmer { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+
+  .cpp-price-change { animation: priceFlash 0.4s ease; }
+  @keyframes priceFlash { 0% { transform: scale(1.2); color: #10b981; } 100% { transform: scale(1); } }
+
+  .cpp-checkbox-custom {
+    width: 20px; height: 20px; border-radius: 6px; border: 2px solid #cbd5e1;
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+    transition: all 0.2s; flex-shrink: 0; background: white;
+  }
+  .cpp-checkbox-custom.checked { background: linear-gradient(135deg,#6366f1,#8b5cf6); border-color: #6366f1; }
+
+  .cpp-badge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+
+  .cpp-modal-enter { animation: modalIn 0.25s cubic-bezier(0.34, 1.3, 0.64, 1); }
+  @keyframes modalIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+
+  .cpp-confetti-piece {
+    position: fixed; width: 10px; height: 10px; border-radius: 2px;
+    animation: confettiFall 3s ease-out forwards;
+  }
+  @keyframes confettiFall {
+    0% { transform: translateY(-20px) rotate(0); opacity: 1; }
+    100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+  }
+
+  @media (max-width: 900px) {
+    .cpp-layout { grid-template-columns: 1fr !important; }
+    .cpp-cost-panel { position: static !important; margin-bottom: 24px; }
+    .cpp-plan-grid { grid-template-columns: 1fr !important; }
+    .cpp-commit-grid { grid-template-columns: 1fr 1fr !important; }
+  }
+  @media (max-width: 600px) {
+    .cpp-commit-grid { grid-template-columns: 1fr !important; }
+    .cpp-vehicle-grid { grid-template-columns: 1fr !important; }
+    .cpp-addon-grid { grid-template-columns: 1fr !important; }
+  }
+`;
+
+// ─── CONFETTI ─────────────────────────────────────────────────────────────────
+function Confetti() {
+  const colours = ["#6366f1","#f59e0b","#10b981","#ef4444","#8b5cf6","#06b6d4","#f97316"];
+  const pieces = Array.from({length:60},(_,i) => ({
+    id:i, left:`${Math.random()*100}vw`, delay:`${Math.random()*2}s`,
+    color:colours[i%colours.length], size:`${6+Math.random()*10}px`,
+  }));
   return (
-    <div style={{ display:"flex", alignItems:"center", padding:"0 4px", gap:2, overflowX:"auto" }}>
-      {STEP_LABELS.map((label, i) => {
-        const n = i + 1;
-        const done = n < step;
-        const active = n === step;
+    <>
+      {pieces.map(p => (
+        <div key={p.id} className="cpp-confetti-piece" style={{left:p.left,top:"-20px",animationDelay:p.delay,width:p.size,height:p.size,background:p.color}} />
+      ))}
+    </>
+  );
+}
+
+// ─── STEP BAR ─────────────────────────────────────────────────────────────────
+const STEPS = ["Your Car","Area","Plan","Add-ons","Details","Review"];
+function StepBar({step, goTo}: {step:number; goTo:(n:number)=>void}) {
+  return (
+    <div style={{display:"flex",alignItems:"center",gap:0,padding:"12px 24px",overflowX:"auto"}}>
+      {STEPS.map((label,i) => {
+        const n=i+1, done=n<step, active=n===step;
         return (
           <React.Fragment key={n}>
-            <button
-              onClick={() => done && goTo(n)}
-              style={{
-                display:"flex", alignItems:"center", gap:6, padding:"6px 10px",
-                background:"none", border:"none", cursor: done ? "pointer" : "default",
-                borderRadius:6, transition:"background 0.15s",
-                backgroundColor: active ? S.blueL : "transparent",
-              }}
-            >
+            <button onClick={()=>done&&goTo(n)} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 12px",background:"none",border:"none",cursor:done?"pointer":"default",borderRadius:10,transition:"all 0.2s",opacity:done||active?1:0.45}}>
               <div style={{
-                width:22, height:22, borderRadius:"50%", flexShrink:0,
-                display:"flex", alignItems:"center", justifyContent:"center",
-                fontSize:11, fontWeight:700,
-                background: done ? S.green : active ? S.blue : S.border,
-                color: (done || active) ? S.white : S.gray,
+                width:28,height:28,borderRadius:"50%",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",
+                fontSize:12,fontWeight:800,transition:"all 0.3s",
+                background:done?"linear-gradient(135deg,#10b981,#059669)":active?"linear-gradient(135deg,#6366f1,#8b5cf6)":"rgba(148,163,184,0.25)",
+                color:(done||active)?"white":"#94a3b8",
+                boxShadow:active?"0 4px 12px rgba(99,102,241,0.4)":done?"0 4px 12px rgba(16,185,129,0.35)":"none",
               }}>
-                {done ? "✓" : n}
+                {done?"✓":n}
               </div>
-              <span style={{
-                fontSize:12, fontWeight: active ? 700 : 500, whiteSpace:"nowrap",
-                color: active ? S.navy : done ? S.green : S.gray,
-              }}>{label}</span>
+              <span style={{fontSize:12,fontWeight:active?700:500,whiteSpace:"nowrap",color:active?"#4f46e5":done?"#059669":"#94a3b8"}}>{label}</span>
             </button>
-            {i < STEP_LABELS.length - 1 && (
-              <div style={{ flex:1, height:1, minWidth:8, background: n < step ? S.green : S.border }} />
+            {i<STEPS.length-1 && (
+              <div style={{flex:1,height:2,minWidth:12,borderRadius:2,background:n<step?"linear-gradient(90deg,#10b981,#6366f1)":"rgba(148,163,184,0.2)",transition:"all 0.5s"}} />
             )}
           </React.Fragment>
         );
@@ -160,145 +247,152 @@ function StepBar({ step, goTo }: { step: number; goTo: (n: number) => void }) {
 }
 
 // ─── LIVE COST PANEL ─────────────────────────────────────────────────────────
-function CostPanel({
-  step, activeCat, vehicleCategories, selectedPlan, planMode, selectedPack,
-  planPrice, packPrice, addons, addonTotal, total, commitment, commitments,
-  cfg, vehicleCat, basePrice,
-}: any) {
-  const hasSelection = activeCat || selectedPlan || addons.length > 0;
-  const planObj = cfg.monthlyPlans.find((p: any) => p.id === selectedPlan);
-  const catLabel = vehicleCategories.find((c: any) => c.id === activeCat)?.label;
-  const catIcon  = vehicleCategories.find((c: any) => c.id === activeCat)?.icon || "🚗";
-  const commitObj = commitments.find((c: any) => c.id === commitment);
-
-  const discountPct = commitment === "3month" ? 5 : commitment === "6month" ? 10 : commitment === "12month" ? 18 : 0;
-  const discountAmt = planMode === "monthly" ? Math.round(planPrice * discountPct / 100) : 0;
+function CostPanel({step,activeCat,vehicleCategories,selectedPlan,planMode,selectedPack,planPrice,packPrice,addons,addonTotal,total,commitment,commitments,cfg,vehicleCat,basePrice}: any) {
+  const planObj = cfg.monthlyPlans.find((p:any)=>p.id===selectedPlan);
+  const catIcon = vehicleCategories.find((c:any)=>c.id===activeCat)?.icon||"🚗";
+  const catLabel = vehicleCategories.find((c:any)=>c.id===activeCat)?.label;
+  const commitObj = commitments.find((c:any)=>c.id===commitment);
+  const discountPct = commitment==="3month"?5:commitment==="6month"?10:commitment==="12month"?18:0;
+  const discountAmt = planMode==="monthly"?Math.round(planPrice*discountPct/100):0;
   const finalTotal = total - discountAmt;
+  const grandTotal = Math.round(finalTotal*1.18);
+  const hasContent = activeCat||selectedPlan||addons.length>0;
+  const prevTotal = useRef(grandTotal);
+  const priceChanged = prevTotal.current !== grandTotal;
+  useEffect(() => { prevTotal.current = grandTotal; }, [grandTotal]);
 
   return (
-    <div style={{
-      background:S.white, border:`1px solid ${S.border}`, borderRadius:16,
-      overflow:"hidden", position:"sticky", top:80,
-      boxShadow:"0 4px 24px rgba(11,31,58,0.08)",
-    }}>
-      {/* Header */}
-      <div style={{ background:S.navy, padding:"16px 20px" }}>
-        <div style={{ fontSize:11, color:"rgba(255,255,255,0.6)", letterSpacing:1, textTransform:"uppercase", marginBottom:4 }}>Order Summary</div>
-        <div style={{ fontSize:28, fontWeight:800, color:S.white, fontFamily:"Georgia,serif" }}>
-          {inr(finalTotal > 0 ? finalTotal : 0)}
-          {planMode === "monthly" && <span style={{ fontSize:13, fontWeight:400, opacity:0.7 }}>/month</span>}
+    <div className="cpp-cost-panel" style={{position:"sticky",top:80,borderRadius:24,overflow:"hidden",boxShadow:"0 20px 60px rgba(0,0,0,0.15)"}}>
+      {/* Gradient header */}
+      <div style={{background:"linear-gradient(135deg,#1e1b4b 0%,#312e81 50%,#4c1d95 100%)",padding:"24px 22px",position:"relative",overflow:"hidden"}}>
+        <div style={{position:"absolute",top:-30,right:-30,width:120,height:120,borderRadius:"50%",background:"rgba(255,255,255,0.05)"}} />
+        <div style={{position:"absolute",bottom:-20,left:-20,width:80,height:80,borderRadius:"50%",background:"rgba(255,255,255,0.04)"}} />
+        <div style={{fontSize:11,color:"rgba(199,210,254,0.7)",letterSpacing:2,textTransform:"uppercase",marginBottom:6,fontWeight:600}}>Order Summary</div>
+        <div key={grandTotal} className={priceChanged?"cpp-price-change":""} style={{fontSize:36,fontWeight:800,color:"white",fontFamily:"'Playfair Display',serif",lineHeight:1}}>
+          {inr(grandTotal>0?grandTotal:0)}
+          {planMode==="monthly" && <span style={{fontSize:14,fontWeight:400,opacity:0.6,fontFamily:"'Sora',sans-serif"}}>/mo</span>}
         </div>
-        {discountAmt > 0 && (
-          <div style={{ fontSize:12, color:"#86EFAC", marginTop:4 }}>
-            🎉 Saving {inr(discountAmt)} with {commitObj?.term}
+        {discountAmt>0 && (
+          <div style={{marginTop:8,display:"inline-flex",alignItems:"center",gap:6,background:"rgba(16,185,129,0.2)",border:"1px solid rgba(16,185,129,0.3)",borderRadius:20,padding:"4px 10px"}}>
+            <span style={{color:"#6ee7b7",fontSize:12,fontWeight:600}}>🎉 Saving {inr(discountAmt)} with {commitObj?.term}</span>
           </div>
+        )}
+        {finalTotal>0 && (
+          <div style={{marginTop:8,fontSize:12,color:"rgba(199,210,254,0.6)"}}>incl. {inr(Math.round(finalTotal*0.18))} GST</div>
         )}
       </div>
 
-      <div style={{ padding:"16px 20px" }}>
-        {!hasSelection && step < 3 && (
-          <div style={{ textAlign:"center", padding:"24px 0", color:S.gray, fontSize:13 }}>
-            <div style={{ fontSize:32, marginBottom:8 }}>🛒</div>
-            <div>Your selections will appear here</div>
+      <div style={{background:"rgba(255,255,255,0.97)",backdropFilter:"blur(20px)",padding:"18px 22px"}}>
+        {!hasContent && step<3 && (
+          <div style={{textAlign:"center",padding:"28px 0"}}>
+            <div style={{fontSize:48,marginBottom:12}}>🛒</div>
+            <div style={{color:"#94a3b8",fontSize:13}}>Your selections appear here</div>
           </div>
         )}
 
-        {/* Vehicle */}
         {activeCat && (
-          <div style={{ marginBottom:12 }}>
-            <div style={{ fontSize:11, color:S.gray, marginBottom:4, textTransform:"uppercase", letterSpacing:0.5 }}>Vehicle</div>
-            <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-              <span style={{ fontSize:18 }}>{catIcon}</span>
-              <span style={{ fontSize:13, color:S.navy, fontWeight:600 }}>{catLabel}</span>
+          <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",background:"linear-gradient(135deg,#f0f9ff,#eff6ff)",borderRadius:12,marginBottom:10}}>
+            <span style={{fontSize:22}}>{catIcon}</span>
+            <div>
+              <div style={{fontSize:11,color:"#64748b"}}>Vehicle</div>
+              <div style={{fontSize:13,fontWeight:700,color:"#1e293b"}}>{catLabel}</div>
             </div>
           </div>
         )}
 
-        {/* Plan */}
-        {planMode === "monthly" && selectedPlan && planPrice > 0 && (
-          <div style={{ marginBottom:12 }}>
-            <div style={{ fontSize:11, color:S.gray, marginBottom:4, textTransform:"uppercase", letterSpacing:0.5 }}>Plan</div>
-            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-              <span style={{ fontSize:13, color:S.navy, fontWeight:600 }}>{planObj?.name}</span>
-              <span style={{ fontSize:13, color:S.navy, fontWeight:700 }}>{inr(planPrice)}</span>
-            </div>
-            <div style={{ fontSize:11, color:S.gray }}>~₹{Math.round(planPrice/30)}/wash · 30 washes</div>
-          </div>
-        )}
-
-        {/* Pack */}
-        {planMode === "pack" && selectedPack && packPrice > 0 && (
-          <div style={{ marginBottom:12 }}>
-            <div style={{ fontSize:11, color:S.gray, marginBottom:4, textTransform:"uppercase", letterSpacing:0.5 }}>Pack</div>
-            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-              <span style={{ fontSize:13, color:S.navy, fontWeight:600 }}>
-                {cfg.packs.find((p: any) => p.id === selectedPack)?.name}
-              </span>
-              <span style={{ fontSize:13, color:S.navy, fontWeight:700 }}>{inr(packPrice)}</span>
+        {planMode==="monthly" && selectedPlan && planPrice>0 && (
+          <div style={{padding:"10px 12px",background:"linear-gradient(135deg,#f5f3ff,#ede9fe)",borderRadius:12,marginBottom:10}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+              <div>
+                <div style={{fontSize:11,color:"#64748b"}}>Monthly Plan</div>
+                <div style={{fontSize:13,fontWeight:700,color:"#1e293b"}}>{planObj?.icon} {planObj?.name}</div>
+                <div style={{fontSize:11,color:"#7c3aed"}}>~₹{Math.round(planPrice/30)}/wash</div>
+              </div>
+              <div style={{fontSize:16,fontWeight:800,color:"#4f46e5"}}>{inr(planPrice)}</div>
             </div>
           </div>
         )}
 
-        {/* Commitment */}
-        {planMode === "monthly" && commitment !== "monthly" && (
-          <div style={{ marginBottom:12 }}>
-            <div style={{ fontSize:11, color:S.gray, marginBottom:4, textTransform:"uppercase", letterSpacing:0.5 }}>Commitment</div>
-            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-              <span style={{ fontSize:13, color:S.navy }}>{commitObj?.term}</span>
-              <span style={{ fontSize:12, color:S.green, fontWeight:600 }}>{commitObj?.discountLabel}</span>
+        {planMode==="pack" && selectedPack && packPrice>0 && (
+          <div style={{padding:"10px 12px",background:"linear-gradient(135deg,#f0fdf4,#dcfce7)",borderRadius:12,marginBottom:10}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+              <div>
+                <div style={{fontSize:11,color:"#64748b"}}>Visit Pack</div>
+                <div style={{fontSize:13,fontWeight:700,color:"#1e293b"}}>{cfg.packs.find((p:any)=>p.id===selectedPack)?.name}</div>
+              </div>
+              <div style={{fontSize:16,fontWeight:800,color:"#059669"}}>{inr(packPrice)}</div>
             </div>
           </div>
         )}
 
-        {/* Add-ons */}
-        {addons.length > 0 && (
-          <div style={{ marginBottom:12 }}>
-            <div style={{ fontSize:11, color:S.gray, marginBottom:6, textTransform:"uppercase", letterSpacing:0.5 }}>Add-ons</div>
-            {addons.map((id: string) => {
-              const a = cfg.addons.find((x: any) => x.id === id);
-              const p = a?.prices?.[vehicleCat] ?? a?.price ?? 0;
+        {planMode==="monthly" && commitment!=="monthly" && (
+          <div style={{padding:"8px 12px",background:"linear-gradient(135deg,#fffbeb,#fef3c7)",borderRadius:12,marginBottom:10,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <span style={{fontSize:12,color:"#78350f"}}>{commitObj?.term}</span>
+            <span className="cpp-badge" style={{background:"rgba(245,158,11,0.15)",color:"#b45309"}}>{commitObj?.discountLabel}</span>
+          </div>
+        )}
+
+        {addons.length>0 && (
+          <div style={{marginBottom:10}}>
+            <div style={{fontSize:11,color:"#94a3b8",marginBottom:6,textTransform:"uppercase",letterSpacing:0.5}}>Add-ons</div>
+            {addons.map((id:string)=>{
+              const a=cfg.addons.find((x:any)=>x.id===id);
+              const p=a?.prices?.[vehicleCat]??a?.price??0;
               return (
-                <div key={id} style={{ display:"flex", justifyContent:"space-between", fontSize:12, marginBottom:4 }}>
-                  <span style={{ color:S.gray }}>+ {a?.name}</span>
-                  <span style={{ color:S.navy, fontWeight:600 }}>{inr(p)}</span>
+                <div key={id} style={{display:"flex",justifyContent:"space-between",fontSize:12,padding:"4px 0",borderBottom:"1px dashed rgba(148,163,184,0.2)"}}>
+                  <span style={{color:"#475569"}}>+ {a?.name}</span>
+                  <span style={{color:"#1e293b",fontWeight:600}}>{inr(p)}</span>
                 </div>
               );
             })}
           </div>
         )}
 
-        {/* Divider + Total */}
-        {(planPrice > 0 || packPrice > 0) && (
+        {(planPrice>0||packPrice>0) && (
           <>
-            <div style={{ borderTop:`1px dashed ${S.border}`, margin:"12px 0" }} />
-            <div style={{ display:"flex", justifyContent:"space-between", marginBottom:4 }}>
-              <span style={{ fontSize:13, color:S.gray }}>Subtotal</span>
-              <span style={{ fontSize:13, color:S.navy, fontWeight:600 }}>{inr(total)}</span>
-            </div>
-            {discountAmt > 0 && (
-              <div style={{ display:"flex", justifyContent:"space-between", marginBottom:4 }}>
-                <span style={{ fontSize:13, color:S.green }}>Commitment discount</span>
-                <span style={{ fontSize:13, color:S.green, fontWeight:600 }}>−{inr(discountAmt)}</span>
+            <div style={{borderTop:"2px dashed rgba(148,163,184,0.2)",margin:"12px 0"}} />
+            {discountAmt>0 && (
+              <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+                <span style={{fontSize:12,color:"#059669"}}>Commitment discount</span>
+                <span style={{fontSize:12,color:"#059669",fontWeight:700}}>−{inr(discountAmt)}</span>
               </div>
             )}
-            <div style={{ display:"flex", justifyContent:"space-between", marginBottom:4 }}>
-              <span style={{ fontSize:12, color:S.gray }}>GST (18%)</span>
-              <span style={{ fontSize:12, color:S.gray }}>{inr(Math.round(finalTotal * 0.18))}</span>
+            <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+              <span style={{fontSize:12,color:"#94a3b8"}}>Subtotal</span>
+              <span style={{fontSize:12,color:"#64748b"}}>{inr(finalTotal)}</span>
             </div>
-            <div style={{ display:"flex", justifyContent:"space-between", marginTop:8, paddingTop:8, borderTop:`2px solid ${S.navy}` }}>
-              <span style={{ fontSize:15, color:S.navy, fontWeight:700 }}>Grand Total</span>
-              <span style={{ fontSize:15, color:S.navy, fontWeight:800 }}>{inr(Math.round(finalTotal * 1.18))}</span>
+            <div style={{display:"flex",justifyContent:"space-between",marginBottom:10}}>
+              <span style={{fontSize:12,color:"#94a3b8"}}>GST (18%)</span>
+              <span style={{fontSize:12,color:"#64748b"}}>{inr(Math.round(finalTotal*0.18))}</span>
+            </div>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 14px",background:"linear-gradient(135deg,#1e1b4b,#4c1d95)",borderRadius:12}}>
+              <span style={{fontSize:14,color:"white",fontWeight:700}}>Grand Total</span>
+              <span style={{fontSize:20,color:"white",fontWeight:800,fontFamily:"'Playfair Display',serif"}}>{inr(grandTotal)}</span>
             </div>
           </>
         )}
       </div>
 
-      {/* Trust signals */}
-      <div style={{ borderTop:`1px solid ${S.border}`, padding:"12px 20px", background:S.bg }}>
-        {["🔒 Razorpay secured payment","📸 Before & after photos every wash","🔄 Free re-wash within 24 hours"].map(t => (
-          <div key={t} style={{ fontSize:11, color:S.gray, marginBottom:4 }}>{t}</div>
+      {/* Trust footer */}
+      <div style={{background:"#f8fafc",padding:"12px 22px",borderTop:"1px solid #f1f5f9"}}>
+        {["🔒 Razorpay secured payment","📸 Before & after photos","🔄 Free re-wash within 24h"].map(t=>(
+          <div key={t} style={{fontSize:11,color:"#94a3b8",marginBottom:3,display:"flex",alignItems:"center",gap:4}}>{t}</div>
         ))}
       </div>
+    </div>
+  );
+}
+
+// ─── SECTION HEADING ─────────────────────────────────────────────────────────
+function SectionHead({n,total,title,sub}: {n:number;total:number;title:string;sub:string}) {
+  return (
+    <div style={{marginBottom:28}}>
+      <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
+        <div style={{width:32,height:32,borderRadius:10,background:"linear-gradient(135deg,#6366f1,#8b5cf6)",color:"white",fontWeight:800,fontSize:14,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 4px 12px rgba(99,102,241,0.35)"}}>{n}</div>
+        <div style={{fontSize:11,color:"#6366f1",fontWeight:700,letterSpacing:1.5,textTransform:"uppercase"}}>Step {n} of {total}</div>
+      </div>
+      <h2 style={{fontSize:28,fontWeight:800,color:"#0f172a",margin:"0 0 6px",fontFamily:"'Playfair Display',serif",lineHeight:1.2}}>{title}</h2>
+      <p style={{color:"#64748b",fontSize:14,margin:0,lineHeight:1.5}}>{sub}</p>
     </div>
   );
 }
@@ -307,565 +401,471 @@ function CostPanel({
 export function CustomerPlanPage() {
   const [cfg, setCfg] = useState<PlanPageConfig>(loadConfig);
   const [step, setStep] = useState(1);
-
-  // Step 1
   const [carModel, setCarModel] = useState("");
-  const [detectedCat, setDetectedCat] = useState<string | null>(null);
+  const [detectedCat, setDetectedCat] = useState<string|null>(null);
   const [catConfirmed, setCatConfirmed] = useState(false);
-
-  // Step 2
   const [pincode, setPincode] = useState("");
   const [pincodeStatus, setPincodeStatus] = useState<"ok"|"waitlist"|null>(null);
-
-  // Step 3
   const [planMode, setPlanMode] = useState<"monthly"|"pack">("monthly");
   const [selectedPlan, setSelectedPlan] = useState<string|null>(null);
   const [selectedPack, setSelectedPack] = useState<string|null>(null);
   const [commitment, setCommitment] = useState("monthly");
-
-  // Step 4
   const [addons, setAddons] = useState<string[]>([]);
   const [addonFreq, setAddonFreq] = useState<Record<string,string>>({});
   const [bundleFreq, setBundleFreq] = useState<Record<string,string>>({});
   const _washRef = useRef<string>("shampoo");
   const [, _forceWashRender] = useState(0);
-  const setSelectedWashType = useCallback((v: string) => { _washRef.current = v; _forceWashRender(n => n+1); }, []);
-
-  // Step 5
-  const [custName, setCustName]       = useState("");
-  const [custMobile, setCustMobile]   = useState("");
-  const [custEmail, setCustEmail]     = useState("");
-  const [custReg, setCustReg]         = useState("");
-  const [custAddress, setCustAddress] = useState("");
-  const [prefTime, setPrefTime]       = useState("");
-  const [oneTimeDate, setOneTimeDate] = useState("");
-  const [oneTimeHour, setOneTimeHour] = useState("");
-  const [parking, setParking]         = useState<"dedicated"|"random">("dedicated");
-  const [notifyPref, setNotifyPref]   = useState<"whatsapp"|"email"|"both">("whatsapp");
-
-  // Step 6
-  const [consentTerms, setConsentTerms]   = useState(false);
-  const [consentRefund, setConsentRefund] = useState(false);
-  const [consentCancel, setConsentCancel] = useState(false);
-  const [showTnC, setShowTnC]             = useState<"terms"|"refund"|"cancel"|null>(null);
-
-  // Submit
-  const [isProcessing, setIsProcessing]       = useState(false);
-  const [invoiceNumber, setInvoiceNumber]     = useState("");
-  const [generatedInvoice, setGeneratedInvoice] = useState<any>(null);
+  const setSelectedWashType = useCallback((v:string)=>{ _washRef.current=v; _forceWashRender(n=>n+1); },[]);
+  const [custName,setCustName]=useState(""); const [custMobile,setCustMobile]=useState("");
+  const [custEmail,setCustEmail]=useState(""); const [custReg,setCustReg]=useState("");
+  const [custAddress,setCustAddress]=useState(""); const [prefTime,setPrefTime]=useState("");
+  const [oneTimeDate,setOneTimeDate]=useState(""); const [oneTimeHour,setOneTimeHour]=useState("");
+  const [parking,setParking]=useState<"dedicated"|"random">("dedicated");
+  const [notifyPref,setNotifyPref]=useState<"whatsapp"|"email"|"both">("whatsapp");
+  const [consentTerms,setConsentTerms]=useState(false); const [consentRefund,setConsentRefund]=useState(false); const [consentCancel,setConsentCancel]=useState(false);
+  const [showTnC,setShowTnC]=useState<"terms"|"refund"|"cancel"|null>(null);
+  const [isProcessing,setIsProcessing]=useState(false);
+  const [generatedInvoice,setGeneratedInvoice]=useState<any>(null);
+  const [showConfetti,setShowConfetti]=useState(false);
 
   const { recordRevenue } = useFinance();
   const { addCustomer, customers } = useCustomers();
   const { createSubscription } = useCustomerSubscriptions();
   const { city } = useCity();
 
-  useEffect(() => {
-    const onStorage = () => setCfg(loadConfig());
-    window.addEventListener("storage", onStorage);
-    window.addEventListener("planConfigUpdated", onStorage);
-    return () => { window.removeEventListener("storage", onStorage); window.removeEventListener("planConfigUpdated", onStorage); };
-  }, []);
+  useEffect(()=>{ const fn=()=>setCfg(loadConfig()); window.addEventListener("storage",fn); window.addEventListener("planConfigUpdated",fn); return()=>{ window.removeEventListener("storage",fn); window.removeEventListener("planConfigUpdated",fn); }; },[]);
+  useEffect(()=>{ if(carModel.trim().length<2){setDetectedCat(null);setCatConfirmed(false);return;} const v=carModel.toLowerCase().trim(); let f:string|null=null; for(const[k,c] of Object.entries(cfg.carModelMap)){if(v.includes(k)){f=c;break;}} setDetectedCat(f||(carModel.trim().length>=3?"hatchback":null)); setCatConfirmed(false); },[carModel,cfg.carModelMap]);
+  useEffect(()=>{ if(pincode.length!==6){setPincodeStatus(null);return;} setPincodeStatus(cfg.serviceablePincodes.some(p=>p.code===pincode)?"ok":"waitlist"); },[pincode,cfg.serviceablePincodes]);
 
-  useEffect(() => {
-    if (carModel.trim().length < 2) { setDetectedCat(null); setCatConfirmed(false); return; }
-    const val = carModel.toLowerCase().trim();
-    let found: string|null = null;
-    for (const [kw, cat] of Object.entries(cfg.carModelMap)) { if (val.includes(kw)) { found = cat; break; } }
-    setDetectedCat(found || (carModel.trim().length >= 3 ? "hatchback" : null));
-    setCatConfirmed(false);
-  }, [carModel, cfg.carModelMap]);
+  const activeCat = detectedCat;
+  const catLabel = cfg.vehicleCategories.find(c=>c.id===activeCat)?.label||"";
+  const vehicleCat = (()=>{ const c=(activeCat||"").toLowerCase(); if(c.includes("luxury")||c.includes("lux"))return"luxury"; if(c.includes("suv")||c.includes("muv")||c.includes("sedan"))return"suv"; return"hatchback"; })();
+  const getAddonPrice=(id:string)=>{ const a=cfg.addons.find(a=>a.id===id); if(!a)return 0; const p=(a as any).prices; return p?(p[vehicleCat]??a.price):a.price; };
+  const planPrice=useMemo(()=>{ if(!selectedPlan||!activeCat)return 0; return cfg.monthlyPlans.find(p=>p.id===selectedPlan)?.prices[activeCat]??0; },[selectedPlan,activeCat,cfg.monthlyPlans]);
+  const packPrice=useMemo(()=>{ const p=cfg.packs.find(p=>p.id===selectedPack); if(!p)return 0; const n=(p as any).prices; if(n){const w=n[_washRef.current]??n.shampoo??n.waterWash??Object.values(n)[0]; if(w&&typeof w==="object"){const _c=vehicleCat; const cp=(w as any)[_c]??(w as any).hatchback??0; return typeof cp==="number"?cp:0;}} return typeof(p as any).price==="number"?(p as any).price:0; },[selectedPack,_washRef.current,cfg.packs,activeCat]);
+  const addonTotal=useMemo(()=>{ const ind=addons.reduce((s,id)=>{ const inB=(cfg as any).comboBundles?.some((b:any)=>b.addonIds.includes(id)&&b.addonIds.every((bid:string)=>addons.includes(bid))); if(inB)return s; const f=addonFreq[id]?parseInt(addonFreq[id]):1; return s+getAddonPrice(id)*(isNaN(f)?1:f); },0); const bt=((cfg as any).comboBundles||[]).reduce((s:number,b:any)=>{ const aS=b.addonIds.every((id:string)=>addons.includes(id)); if(!aS)return s; const bp=b.prices?.[vehicleCat]??b.prices?.hatchback??0; const f=bundleFreq[b.id]?parseInt(bundleFreq[b.id]):1; return s+bp*(isNaN(f)?1:f); },0); return ind+bt; },[addons,addonFreq,bundleFreq,cfg.addons,selectedPlan,activeCat]);
+  const basePrice=planMode==="monthly"?planPrice:packPrice;
+  const total=basePrice+addonTotal;
+  const isOneTime=planMode==="pack"&&selectedPack==="onetime";
+  const discountPct=commitment==="3month"?5:commitment==="6month"?10:commitment==="12month"?18:0;
+  const discountAmt=planMode==="monthly"?Math.round(planPrice*discountPct/100):0;
+  const finalTotal=total-discountAmt;
+  const step1Ok=!!activeCat&&carModel.trim().length>=2;
+  const step2Ok=pincodeStatus!==null;
+  const step3Ok=planMode==="monthly"?!!selectedPlan:!!selectedPack;
+  const step5Ok=!!(custName&&custMobile&&custAddress&&(isOneTime?(oneTimeDate&&oneTimeHour):!!prefTime));
+  const step6Ok=consentTerms&&consentRefund&&consentCancel;
 
-  useEffect(() => {
-    if (pincode.length !== 6) { setPincodeStatus(null); return; }
-    setPincodeStatus(cfg.serviceablePincodes.some(p => p.code === pincode) ? "ok" : "waitlist");
-  }, [pincode, cfg.serviceablePincodes]);
+  const PUBLIC_HOLIDAYS:string[]=useMemo(()=>{ try{const s=localStorage.getItem("cleancar_public_holidays");if(s)return JSON.parse(s);}catch{} return["2026-01-26","2026-03-25","2026-04-06","2026-04-14","2026-04-15","2026-05-01","2026-08-15","2026-10-02","2026-10-20","2026-11-01","2026-12-25"]; },[]);
+  const isHoliday=(d:Date)=>d.getDay()===0||PUBLIC_HOLIDAYS.includes(d.toISOString().slice(0,10));
+  const nextWorkingDay=(from:Date):Date=>{ const d=new Date(from); d.setDate(d.getDate()+1); while(isHoliday(d))d.setDate(d.getDate()+1); return d; };
+  const nowCutoffInfo=()=>{ const n=new Date(),h=n.getHours(),m=n.getMinutes(),t=h*60+m; if(isHoliday(n)||t>=18*60+30)return{nextOnly:true,nwdMinHour:13}; if(t>=16*60)return{nextOnly:true,nwdMinHour:18}; return{nextOnly:false,nwdMinHour:13}; };
+  const minOneTimeDate=useMemo(()=>{ const{nextOnly}=nowCutoffInfo(); return nextOnly?nextWorkingDay(new Date()).toISOString().slice(0,10):new Date().toISOString().slice(0,10); },[PUBLIC_HOLIDAYS]);
+  const getOneTimeSlots=(ds:string):string[]=>{ if(!ds)return[]; const now=new Date(),nh=now.getHours(),ts=now.toISOString().slice(0,10),iT=ds===ts; const sl:string[]=[]; for(let h=5;h<=21;h++){const pH=String(h).padStart(2,"0")+":00"; if(iT){if(nh<10){if(h>=12)sl.push(pH);}else if(nh<16){if(h>=nh+4)sl.push(pH);}}else{const{nextOnly,nwdMinHour}=nowCutoffInfo();const nS=nextWorkingDay(now).toISOString().slice(0,10);if(nextOnly&&ds===nS){if(h>=nwdMinHour)sl.push(pH);}else{sl.push(pH);}}} return sl; };
+  const handleOneTimeDateChange=(ds:string)=>{ setOneTimeDate(ds); const{nextOnly,nwdMinHour}=nowCutoffInfo(),nS=nextWorkingDay(new Date()).toISOString().slice(0,10); if(nextOnly&&ds===nS){setOneTimeHour(`${String(nwdMinHour).padStart(2,"0")}:00`);}else{setOneTimeHour("");} };
 
-  const activeCat  = detectedCat;
-  const catLabel   = cfg.vehicleCategories.find(c => c.id === activeCat)?.label || "";
-  const vehicleCat = (() => {
-    const cat = (activeCat||"").toLowerCase();
-    if (cat.includes("luxury")||cat.includes("lux")) return "luxury";
-    if (cat.includes("suv")||cat.includes("muv")||cat.includes("sedan")) return "suv";
-    return "hatchback";
-  })();
+  const scrollRef=useRef<HTMLDivElement>(null);
+  const goTo=useCallback((n:number)=>{ setStep(n); setTimeout(()=>scrollRef.current?.scrollIntoView({behavior:"smooth",block:"start"}),50); },[]);
 
-  const getAddonPrice = (id: string): number => {
-    const a = cfg.addons.find(a => a.id === id); if (!a) return 0;
-    const p = (a as any).prices; return p ? (p[vehicleCat] ?? a.price) : a.price;
-  };
-
-  const planPrice = useMemo(() => {
-    if (!selectedPlan || !activeCat) return 0;
-    return cfg.monthlyPlans.find(p => p.id === selectedPlan)?.prices[activeCat] ?? 0;
-  }, [selectedPlan, activeCat, cfg.monthlyPlans]);
-
-  const packPrice = useMemo(() => {
-    const p = cfg.packs.find(p => p.id === selectedPack); if (!p) return 0;
-    const nested = (p as any).prices;
-    if (nested) {
-      const washObj = nested[_washRef.current] ?? nested.shampoo ?? nested.waterWash ?? Object.values(nested)[0];
-      if (washObj && typeof washObj === "object") {
-        const _cat = vehicleCat;
-        const catPrice = (washObj as any)[_cat] ?? (washObj as any).hatchback ?? 0;
-        return typeof catPrice === "number" ? catPrice : 0;
-      }
-    }
-    return typeof (p as any).price === "number" ? (p as any).price : 0;
-  }, [selectedPack, _washRef.current, cfg.packs, activeCat]);
-
-  const addonTotal = useMemo(() => {
-    const indiv = addons.reduce((s, id) => {
-      const inBundle = (cfg as any).comboBundles?.some((b: any) => b.addonIds.includes(id) && b.addonIds.every((bid: string) => addons.includes(bid)));
-      if (inBundle) return s;
-      const freq = addonFreq[id] ? parseInt(addonFreq[id]) : 1;
-      return s + getAddonPrice(id) * (isNaN(freq) ? 1 : freq);
-    }, 0);
-    const bundleTotals = ((cfg as any).comboBundles||[]).reduce((s: number, b: any) => {
-      const allSel = b.addonIds.every((id: string) => addons.includes(id));
-      if (!allSel) return s;
-      const bPrice = b.prices?.[vehicleCat] ?? b.prices?.hatchback ?? 0;
-      const freq = bundleFreq[b.id] ? parseInt(bundleFreq[b.id]) : 1;
-      return s + bPrice * (isNaN(freq) ? 1 : freq);
-    }, 0);
-    return indiv + bundleTotals;
-  }, [addons, addonFreq, bundleFreq, cfg.addons, selectedPlan, activeCat]);
-
-  const basePrice = planMode === "monthly" ? planPrice : packPrice;
-  const total     = basePrice + addonTotal;
-  const isOneTime = planMode === "pack" && selectedPack === "onetime";
-
-  const discountPct = commitment === "3month" ? 5 : commitment === "6month" ? 10 : commitment === "12month" ? 18 : 0;
-  const discountAmt = planMode === "monthly" ? Math.round(planPrice * discountPct / 100) : 0;
-  const finalTotal  = total - discountAmt;
-
-  const step1Ok = !!activeCat && carModel.trim().length >= 2;
-  const step2Ok = pincodeStatus !== null;
-  const step3Ok = planMode === "monthly" ? !!selectedPlan : !!selectedPack;
-  const step5Ok = custName && custMobile && custAddress && (isOneTime ? (oneTimeDate && oneTimeHour) : !!prefTime);
-  const step6Ok = consentTerms && consentRefund && consentCancel;
-
-  const PUBLIC_HOLIDAYS: string[] = useMemo(() => {
-    try { const s = localStorage.getItem("cleancar_public_holidays"); if (s) return JSON.parse(s); } catch {}
-    return ["2026-01-26","2026-03-25","2026-04-06","2026-04-14","2026-04-15","2026-05-01","2026-08-15","2026-10-02","2026-10-20","2026-11-01","2026-12-25"];
-  }, []);
-  const isHoliday = (d: Date) => d.getDay() === 0 || PUBLIC_HOLIDAYS.includes(d.toISOString().slice(0,10));
-  const nextWorkingDay = (from: Date): Date => { const d = new Date(from); d.setDate(d.getDate()+1); while(isHoliday(d)) d.setDate(d.getDate()+1); return d; };
-  const nowCutoffInfo = () => { const n=new Date(),h=n.getHours(),m=n.getMinutes(),t=h*60+m; if(isHoliday(n)||t>=18*60+30) return{nextOnly:true,nwdMinHour:13}; if(t>=16*60) return{nextOnly:true,nwdMinHour:18}; return{nextOnly:false,nwdMinHour:13}; };
-  const minOneTimeDate = useMemo(() => { const{nextOnly}=nowCutoffInfo(); return nextOnly?nextWorkingDay(new Date()).toISOString().slice(0,10):new Date().toISOString().slice(0,10); }, [PUBLIC_HOLIDAYS]);
-  const getOneTimeSlots = (dateStr: string): string[] => {
-    if(!dateStr) return [];
-    const now=new Date(),nowHour=now.getHours(),todayStr=now.toISOString().slice(0,10),isToday=dateStr===todayStr;
-    const slots: string[] = [];
-    for(let h=5;h<=21;h++){
-      const padH=String(h).padStart(2,"0")+":00";
-      if(isToday){ if(nowHour<10){if(h>=12)slots.push(padH);} else if(nowHour<16){if(h>=nowHour+4)slots.push(padH);} }
-      else{const{nextOnly,nwdMinHour}=nowCutoffInfo();const nwdStr=nextWorkingDay(now).toISOString().slice(0,10);if(nextOnly&&dateStr===nwdStr){if(h>=nwdMinHour)slots.push(padH);}else{slots.push(padH);}}
-    }
-    return slots;
-  };
-  const handleOneTimeDateChange = (dateStr: string) => {
-    setOneTimeDate(dateStr);
-    const{nextOnly,nwdMinHour}=nowCutoffInfo(),nwdStr=nextWorkingDay(new Date()).toISOString().slice(0,10);
-    if(nextOnly&&dateStr===nwdStr){setOneTimeHour(`${String(nwdMinHour).padStart(2,"0")}:00`);}else{setOneTimeHour("");}
-  };
-
-  const scrollTopRef = useRef<HTMLDivElement>(null);
-  const goTo = useCallback((n: number) => {
-    setStep(n);
-    setTimeout(() => scrollTopRef.current?.scrollIntoView({ behavior:"smooth", block:"start" }), 50);
-  }, []);
-
-  const handleSubmit = async () => {
+  const handleSubmit=async()=>{
     setIsProcessing(true);
     try {
-      const now = new Date();
-      const invNum = `INV-${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${Date.now().toString().slice(-6)}`;
-      setInvoiceNumber(invNum);
-      const nameParts = custName.trim().split(" "), firstName = nameParts[0]||custName, lastName = nameParts.slice(1).join(" ")||"—";
-      const existing = customers.find(c => c.phone===custMobile||(custEmail&&c.email===custEmail));
-      let customerId: string;
-      if (existing) { customerId = existing.customerId; }
-      else {
-        const newCust = addCustomer({ firstName, lastName, email:custEmail||"", phone:custMobile, address:{ line1:custAddress, area:cfg.serviceablePincodes.find(p=>p.code===pincode)?.label||pincode, city:"Surat", pinCode:pincode }, vehicleDetails:activeCat?{category:activeCat,brand:carModel.split(" ")[0]||carModel,color:"",registrationNumber:custReg.toUpperCase()}:undefined, leadSource:"Website — Buy Page", status:"Active", tags:["web-signup"] });
-        customerId = newCust.customerId;
-      }
-      const planObj = cfg.monthlyPlans.find(p=>p.id===selectedPlan), packObj = cfg.packs.find(p=>p.id===selectedPack);
-      const renewalDate = new Date(now); renewalDate.setMonth(renewalDate.getMonth()+1);
-      const sub = createSubscription({ customerId, packageType:selectedPlan==="wax"?"Premium":selectedPlan==="shampoo"?"Standard":"Basic", packageName:planMode==="monthly"?(planObj?.name||selectedPlan||"Plan"):(packObj?.name||selectedPack||"Pack"), frequency:isOneTime?"One-Time":selectedPack==="pack2"?"Pack of 2":selectedPack==="pack4"?"Pack of 4":"One-time", status:"Active", startDate:now.toISOString().split("T")[0], renewalDate:renewalDate.toISOString().split("T")[0], pricing:{ basePrice, discount:discountAmt, finalPrice:finalTotal, currency:"INR" }, serviceDetails:{ vehicleType:activeCat||"hatchback", addOns:addons, preferredTimeSlot:isOneTime?`${oneTimeDate} ${oneTimeHour}`:prefTime }, billingCycle:"Monthly", paymentStatus:"Paid" });
-      recordRevenue({ customerId, subscriptionId:sub.subscriptionId, type:planMode==="monthly"?"Subscription":"One-Time", amount:finalTotal, receivedDate:now.toISOString().split("T")[0], paymentMethod:"UPI", invoiceNumber:invNum, status:"Received", cityId:city||"CITY-SURAT" });
-      const invoice = {
-        invoiceNumber:invNum, invoiceDate:now.toLocaleDateString("en-IN",{day:"2-digit",month:"long",year:"numeric"}),
-        customerName:custName, customerPhone:custMobile, customerEmail:custEmail, vehicleReg:custReg, address:custAddress, pincode,
-        items:[...(planMode==="monthly"?[{name:`${planObj?.name||selectedPlan} — Monthly Subscription (${catLabel})`,qty:1,rate:planPrice,amount:planPrice}]:[{name:`${packObj?.name||selectedPack} Pack`,qty:1,rate:packPrice,amount:packPrice}]), ...addons.map(id=>{const a=cfg.addons.find(x=>x.id===id);return{name:a?.name||id,qty:1,rate:a?.price||0,amount:a?.price||0};})],
-        subtotal:finalTotal, cgst:parseFloat((finalTotal*0.09).toFixed(2)), sgst:parseFloat((finalTotal*0.09).toFixed(2)), grandTotal:parseFloat((finalTotal*1.18).toFixed(2)),
-        paymentMethod:"Razorpay (UPI/Card/NetBanking)", subscriptionId:sub.subscriptionId, customerId, notifyPref, commitment:planMode==="monthly"?(cfg.commitments.find(c=>c.id===commitment)?.term||commitment):"N/A",
-      };
+      const now=new Date();
+      const invNum=`INV-${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${Date.now().toString().slice(-6)}`;
+      const nameParts=custName.trim().split(" "),firstName=nameParts[0]||custName,lastName=nameParts.slice(1).join(" ")||"—";
+      const existing=customers.find(c=>c.phone===custMobile||(custEmail&&c.email===custEmail));
+      let customerId:string;
+      if(existing){customerId=existing.customerId;}
+      else{const nc=addCustomer({firstName,lastName,email:custEmail||"",phone:custMobile,address:{line1:custAddress,area:cfg.serviceablePincodes.find(p=>p.code===pincode)?.label||pincode,city:"Surat",pinCode:pincode},vehicleDetails:activeCat?{category:activeCat,brand:carModel.split(" ")[0]||carModel,color:"",registrationNumber:custReg.toUpperCase()}:undefined,leadSource:"Website — Buy Page",status:"Active",tags:["web-signup"]}); customerId=nc.customerId;}
+      const planObj=cfg.monthlyPlans.find(p=>p.id===selectedPlan),packObj=cfg.packs.find(p=>p.id===selectedPack);
+      const renewalDate=new Date(now);renewalDate.setMonth(renewalDate.getMonth()+1);
+      const sub=createSubscription({customerId,packageType:selectedPlan==="wax"?"Premium":selectedPlan==="shampoo"?"Standard":"Basic",packageName:planMode==="monthly"?(planObj?.name||selectedPlan||"Plan"):(packObj?.name||selectedPack||"Pack"),frequency:isOneTime?"One-Time":selectedPack==="pack2"?"Pack of 2":selectedPack==="pack4"?"Pack of 4":"One-time",status:"Active",startDate:now.toISOString().split("T")[0],renewalDate:renewalDate.toISOString().split("T")[0],pricing:{basePrice,discount:discountAmt,finalPrice:finalTotal,currency:"INR"},serviceDetails:{vehicleType:activeCat||"hatchback",addOns:addons,preferredTimeSlot:isOneTime?`${oneTimeDate} ${oneTimeHour}`:prefTime},billingCycle:"Monthly",paymentStatus:"Paid"});
+      recordRevenue({customerId,subscriptionId:sub.subscriptionId,type:planMode==="monthly"?"Subscription":"One-Time",amount:finalTotal,receivedDate:now.toISOString().split("T")[0],paymentMethod:"UPI",invoiceNumber:invNum,status:"Received",cityId:city||"CITY-SURAT"});
+      const invoice={invoiceNumber:invNum,invoiceDate:now.toLocaleDateString("en-IN",{day:"2-digit",month:"long",year:"numeric"}),customerName:custName,customerPhone:custMobile,customerEmail:custEmail,vehicleReg:custReg,address:custAddress,pincode,items:[...(planMode==="monthly"?[{name:`${planObj?.name||selectedPlan} — Monthly Subscription (${catLabel})`,qty:1,rate:planPrice,amount:planPrice}]:[{name:`${packObj?.name||selectedPack} Pack`,qty:1,rate:packPrice,amount:packPrice}]),...addons.map(id=>{const a=cfg.addons.find(x=>x.id===id);return{name:a?.name||id,qty:1,rate:a?.price||0,amount:a?.price||0};})],subtotal:finalTotal,cgst:parseFloat((finalTotal*0.09).toFixed(2)),sgst:parseFloat((finalTotal*0.09).toFixed(2)),grandTotal:parseFloat((finalTotal*1.18).toFixed(2)),paymentMethod:"Razorpay (UPI/Card/NetBanking)",subscriptionId:sub.subscriptionId,customerId,notifyPref,commitment:planMode==="monthly"?(cfg.commitments.find(c=>c.id===commitment)?.term||commitment):"N/A"};
       setGeneratedInvoice(invoice);
-      try { const stored=JSON.parse(localStorage.getItem("cleancar_web_invoices")||"[]"); stored.unshift({...invoice,createdAt:now.toISOString(),status:"PAID"}); localStorage.setItem("cleancar_web_invoices",JSON.stringify(stored.slice(0,500))); } catch(_){}
-      const waMsg = encodeURIComponent(`Hi ${firstName}! 🎉\n\nYour ${invoice.items[0].name} is confirmed!\n\nInvoice: ${invNum}\nAmount Paid: ₹${(invoice?.grandTotal??0).toLocaleString("en-IN")} (incl. GST)\n\nService starts within 2 working days. Your washer will send before & after photos after every wash.\n\nThank you for choosing ${cfg.brand.name}! 🚗✨`);
-      if (notifyPref==="whatsapp"||notifyPref==="both") { (window as any)._pendingWAInvoice=`https://wa.me/${cfg.brand.whatsappNumber}?text=${waMsg}`; }
+      try{const st=JSON.parse(localStorage.getItem("cleancar_web_invoices")||"[]");st.unshift({...invoice,createdAt:now.toISOString(),status:"PAID"});localStorage.setItem("cleancar_web_invoices",JSON.stringify(st.slice(0,500)));}catch(_){}
+      const waMsg=encodeURIComponent(`Hi ${firstName}! 🎉\n\nYour ${invoice.items[0].name} is confirmed!\n\nInvoice: ${invNum}\nAmount Paid: ₹${(invoice?.grandTotal??0).toLocaleString("en-IN")} (incl. GST)\n\nThank you for choosing ${cfg.brand.name}! 🚗✨`);
+      if(notifyPref==="whatsapp"||notifyPref==="both"){(window as any)._pendingWAInvoice=`https://wa.me/${cfg.brand.whatsappNumber}?text=${waMsg}`;}
       setIsProcessing(false);
+      setShowConfetti(true);
+      setTimeout(()=>setShowConfetti(false),4000);
       goTo(7);
-    } catch(err) { setIsProcessing(false); alert("Something went wrong. Please try again."); }
+    } catch(err){setIsProcessing(false);alert("Something went wrong. Please try again.");}
   };
 
-  // ── SUCCESS PAGE ─────────────────────────────────────────────────────────
-  if (step === 7) {
-    const inv = generatedInvoice;
-    const waMsg = encodeURIComponent(`Hi! Sharing my invoice ${inv?.invoiceNumber} from ${cfg.brand.name}. Please confirm my subscription.`);
+  // ── SUCCESS ──────────────────────────────────────────────────────────────
+  if (step===7) {
+    const inv=generatedInvoice;
+    const waMsg=encodeURIComponent(`Hi! Sharing my invoice ${inv?.invoiceNumber} from ${cfg.brand.name}. Please confirm my subscription.`);
     return (
-      <div style={{ minHeight:"100vh", background:S.bg, display:"flex", alignItems:"center", justifyContent:"center", padding:"40px 20px", fontFamily:"'Nunito',sans-serif" }}>
-        <div style={{ maxWidth:520, width:"100%", textAlign:"center" }}>
-          <div style={{ width:80, height:80, borderRadius:"50%", background:S.greenL, display:"flex", alignItems:"center", justifyContent:"center", fontSize:40, margin:"0 auto 24px" }}>🎉</div>
-          <h1 style={{ fontSize:28, fontWeight:800, color:S.navy, marginBottom:8 }}>You're all set!</h1>
-          <p style={{ color:S.gray, marginBottom:32 }}>Invoice <strong>{inv?.invoiceNumber}</strong> — ₹{inv?.grandTotal?.toLocaleString("en-IN")} incl. GST</p>
-          {cfg.postPaymentSteps.map((step: string, i: number) => (
-            <div key={i} style={{ display:"flex", alignItems:"center", gap:12, background:S.white, border:`1px solid ${S.border}`, borderRadius:10, padding:"12px 16px", marginBottom:8, textAlign:"left" }}>
-              <div style={{ width:28, height:28, borderRadius:"50%", background:S.blueL, color:S.blue, fontWeight:700, fontSize:13, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>{i+1}</div>
-              <span style={{ fontSize:14, color:S.navy }}>{step}</span>
+      <div className="cpp-root" style={{minHeight:"100vh",background:"linear-gradient(135deg,#1e1b4b 0%,#312e81 30%,#1e40af 70%,#0369a1 100%)",display:"flex",alignItems:"center",justifyContent:"center",padding:"40px 20px",position:"relative",overflow:"hidden"}}>
+        <style>{GLOBAL_CSS}</style>
+        {showConfetti && <Confetti />}
+        <div style={{position:"absolute",inset:0,background:"url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Ccircle cx='30' cy='30' r='20'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")"}} />
+        <div style={{maxWidth:520,width:"100%",background:"rgba(255,255,255,0.95)",backdropFilter:"blur(20px)",borderRadius:28,overflow:"hidden",boxShadow:"0 40px 80px rgba(0,0,0,0.3)"}}>
+          {/* Success hero */}
+          <div style={{background:"linear-gradient(135deg,#10b981,#059669)",padding:"40px 32px",textAlign:"center"}}>
+            <div style={{width:80,height:80,borderRadius:"50%",background:"rgba(255,255,255,0.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:40,margin:"0 auto 16px",border:"3px solid rgba(255,255,255,0.3)"}}>🎉</div>
+            <h1 style={{fontSize:28,fontWeight:800,color:"white",margin:"0 0 8px",fontFamily:"'Playfair Display',serif"}}>You're all set!</h1>
+            <p style={{color:"rgba(255,255,255,0.85)",fontSize:14,margin:0}}>Invoice {inv?.invoiceNumber}</p>
+            <div style={{fontSize:32,fontWeight:800,color:"white",marginTop:12,fontFamily:"'Playfair Display',serif"}}>₹{inv?.grandTotal?.toLocaleString("en-IN")}</div>
+            <div style={{fontSize:12,color:"rgba(255,255,255,0.7)"}}>incl. GST</div>
+          </div>
+          <div style={{padding:"28px 32px"}}>
+            {cfg.postPaymentSteps.map((s:string,i:number)=>(
+              <div key={i} style={{display:"flex",alignItems:"center",gap:14,padding:"12px 16px",background:i===0?"linear-gradient(135deg,#eff6ff,#f0fdf4)":"#f8fafc",borderRadius:12,marginBottom:10,border:`1px solid ${i===0?"#bfdbfe":"#f1f5f9"}`}}>
+                <div style={{width:30,height:30,borderRadius:"50%",background:`linear-gradient(135deg,${["#6366f1","#10b981","#f59e0b","#06b6d4"][i]},${["#8b5cf6","#059669","#d97706","#0284c7"][i]})`,color:"white",fontWeight:800,fontSize:13,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{i+1}</div>
+                <span style={{fontSize:13,color:"#1e293b",fontWeight:500}}>{s}</span>
+              </div>
+            ))}
+            <div style={{display:"flex",gap:12,marginTop:24,flexWrap:"wrap"}}>
+              <a href={`https://wa.me/${cfg.brand.whatsappNumber}?text=${waMsg}`} target="_blank" rel="noreferrer"
+                style={{flex:1,padding:"13px 20px",background:"linear-gradient(135deg,#25d366,#128c7e)",color:"white",borderRadius:50,fontWeight:700,fontSize:13,textDecoration:"none",display:"flex",alignItems:"center",justifyContent:"center",gap:8,boxShadow:"0 6px 20px rgba(37,211,102,0.35)"}}>
+                📲 WhatsApp Receipt
+              </a>
+              <button onClick={()=>{setStep(1);setCarModel("");setDetectedCat(null);setSelectedPlan(null);setAddons([]);setGeneratedInvoice(null);}}
+                style={{flex:1,padding:"13px 20px",background:"linear-gradient(135deg,#6366f1,#8b5cf6)",color:"white",borderRadius:50,fontWeight:700,fontSize:13,border:"none",cursor:"pointer",boxShadow:"0 6px 20px rgba(99,102,241,0.35)"}}>
+                Buy Another Plan
+              </button>
             </div>
-          ))}
-          <div style={{ display:"flex", gap:12, marginTop:28, flexWrap:"wrap", justifyContent:"center" }}>
-            <a href={`https://wa.me/${cfg.brand.whatsappNumber}?text=${waMsg}`} target="_blank" rel="noreferrer"
-              style={{ padding:"12px 24px", background:"#25D366", color:S.white, borderRadius:50, fontWeight:700, fontSize:14, textDecoration:"none", display:"inline-flex", alignItems:"center", gap:8 }}>
-              📲 Share on WhatsApp
-            </a>
-            <button onClick={() => { setStep(1); setCarModel(""); setDetectedCat(null); setSelectedPlan(null); setAddons([]); setGeneratedInvoice(null); }}
-              style={{ padding:"12px 24px", background:S.navy, color:S.white, borderRadius:50, fontWeight:700, fontSize:14, border:"none", cursor:"pointer" }}>
-              Buy Another Plan
-            </button>
           </div>
         </div>
       </div>
     );
   }
 
-  // ── BTN ────────────────────────────────────────────────────────────────────
-  const Btn = ({ label, onClick, disabled, secondary }: { label: string; onClick: () => void; disabled?: boolean; secondary?: boolean }) => (
-    <button onClick={onClick} disabled={disabled}
-      style={{ padding:"13px 32px", background:disabled?S.border:secondary?S.white:S.navy, color:disabled?S.gray:secondary?S.navy:S.white, border:secondary?`2px solid ${S.border}`:"none", borderRadius:50, fontWeight:700, fontSize:15, cursor:disabled?"not-allowed":"pointer", transition:"all 0.2s", fontFamily:"'Nunito',sans-serif", boxShadow:(!disabled&&!secondary)?"0 4px 14px rgba(11,31,58,0.2)":"none" }}>
-      {label}
-    </button>
-  );
-
-  const Card = ({ selected, onClick, children, highlight }: { selected?: boolean; onClick?: () => void; children: React.ReactNode; highlight?: boolean }) => (
-    <div onClick={onClick}
-      style={{ border:`2px solid ${selected?S.blue:highlight?S.amber:S.border}`, borderRadius:14, padding:"16px 18px", cursor:onClick?"pointer":"default", background:selected?S.blueL:S.white, transition:"all 0.15s", boxShadow:selected?"0 0 0 4px rgba(27,111,216,0.12)":"0 1px 4px rgba(0,0,0,0.04)", position:"relative" }}>
-      {children}
-    </div>
-  );
-
-  // ── LAYOUT ────────────────────────────────────────────────────────────────
+  // ── PAGE BACKGROUND ───────────────────────────────────────────────────────
   return (
-    <div ref={scrollTopRef} style={{ minHeight:"100vh", background:S.bg, fontFamily:"'Nunito',sans-serif" }}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap'); * { box-sizing: border-box; } input:focus, textarea:focus, select:focus { outline: 2px solid #1B6FD8 !important; outline-offset: 2px; } input[type=radio] { accent-color: #1B6FD8; } input[type=checkbox] { accent-color: #1B6FD8; }`}</style>
+    <div ref={scrollRef} className="cpp-root" style={{minHeight:"100vh",background:"linear-gradient(160deg,#f0f4ff 0%,#faf5ff 35%,#f0fdff 70%,#fefce8 100%)"}}>
+      <style>{GLOBAL_CSS}</style>
 
       {/* Top bar */}
-      <div style={{ background:S.navy, padding:"12px 24px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-        <div>
-          <div style={{ fontSize:18, fontWeight:800, color:S.white, letterSpacing:"-0.3px" }}>249 Carwashing</div>
-          <div style={{ fontSize:11, color:"rgba(255,255,255,0.5)" }}>Secure Checkout</div>
+      <div style={{background:"linear-gradient(135deg,#1e1b4b,#312e81,#4c1d95)",padding:"14px 28px",display:"flex",alignItems:"center",justifyContent:"space-between",boxShadow:"0 4px 20px rgba(30,27,75,0.3)"}}>
+        <div style={{display:"flex",alignItems:"center",gap:12}}>
+          <div style={{width:36,height:36,borderRadius:10,background:"linear-gradient(135deg,#6366f1,#f59e0b)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>🚗</div>
+          <div>
+            <div style={{fontSize:16,fontWeight:800,color:"white",fontFamily:"'Playfair Display',serif"}}>249 Carwashing</div>
+            <div style={{fontSize:10,color:"rgba(199,210,254,0.6)",letterSpacing:0.5}}>SECURE CHECKOUT</div>
+          </div>
         </div>
-        <div style={{ display:"flex", gap:16, alignItems:"center" }}>
-          <span style={{ fontSize:12, color:"rgba(255,255,255,0.7)" }}>🔒 Secured by Razorpay</span>
-          <a href={`tel:${cfg.brand.phone}`} style={{ fontSize:13, color:"#93C5FD", textDecoration:"none", fontWeight:600 }}>{cfg.brand.phone}</a>
+        <div style={{display:"flex",gap:20,alignItems:"center"}}>
+          <div style={{display:"flex",alignItems:"center",gap:6,padding:"6px 12px",background:"rgba(255,255,255,0.1)",borderRadius:20,border:"1px solid rgba(255,255,255,0.15)"}}>
+            <span style={{fontSize:12}}>🔒</span>
+            <span style={{fontSize:11,color:"rgba(199,210,254,0.8)",fontWeight:600}}>Razorpay Secured</span>
+          </div>
+          <a href={`tel:${cfg.brand.phone}`} style={{fontSize:13,color:"#a5b4fc",textDecoration:"none",fontWeight:700}}>{cfg.brand.phone}</a>
         </div>
       </div>
 
-      {/* Steps bar */}
-      <div style={{ background:S.white, borderBottom:`1px solid ${S.border}`, padding:"0 24px", position:"sticky", top:0, zIndex:100, boxShadow:"0 2px 8px rgba(0,0,0,0.06)" }}>
-        <div style={{ maxWidth:1100, margin:"0 auto", padding:"10px 0" }}>
+      {/* Step bar */}
+      <div style={{background:"rgba(255,255,255,0.85)",backdropFilter:"blur(20px)",borderBottom:"1px solid rgba(148,163,184,0.15)",position:"sticky",top:0,zIndex:100,boxShadow:"0 4px 20px rgba(0,0,0,0.06)"}}>
+        <div style={{maxWidth:1100,margin:"0 auto"}}>
           <StepBar step={step} goTo={goTo} />
         </div>
       </div>
 
-      {/* Body: left (form) + right (cost panel) */}
-      <div style={{ maxWidth:1100, margin:"0 auto", padding:"28px 20px", display:"grid", gridTemplateColumns:"1fr 360px", gap:28, alignItems:"start" }}>
+      {/* Main layout */}
+      <div className="cpp-layout" style={{maxWidth:1100,margin:"0 auto",padding:"32px 24px",display:"grid",gridTemplateColumns:"1fr 380px",gap:32,alignItems:"start"}}>
 
-        {/* ── STEP CONTENT ───────────────────────────────────────────────── */}
-        <div>
+        {/* Step content */}
+        <div className="cpp-step-in" key={step}>
 
-          {/* ── STEP 1: Your Car ─────────────────────────────────────────── */}
-          {step === 1 && (
-            <div>
-              <div style={{ marginBottom:24 }}>
-                <div style={{ fontSize:11, color:S.blue, fontWeight:700, letterSpacing:1, textTransform:"uppercase", marginBottom:6 }}>Step 1 of 6</div>
-                <h2 style={{ fontSize:26, fontWeight:800, color:S.navy, margin:"0 0 8px" }}>Tell us about your car</h2>
-                <p style={{ color:S.gray, fontSize:14, margin:0 }}>We'll automatically detect your vehicle type from the model name.</p>
-              </div>
+          {/* ── STEP 1 ────────────────────────────────────────────────────── */}
+          {step===1 && (
+            <div style={{background:"rgba(255,255,255,0.8)",backdropFilter:"blur(16px)",borderRadius:24,padding:"32px",border:"1px solid rgba(255,255,255,0.8)",boxShadow:"0 8px 32px rgba(99,102,241,0.08)"}}>
+              <SectionHead n={1} total={6} title="Tell us about your car" sub="We'll detect your vehicle type automatically from the model name." />
 
-              {/* Model input */}
-              <div style={{ marginBottom:20 }}>
-                <label style={{ display:"block", fontSize:13, fontWeight:700, color:S.navy, marginBottom:8 }}>Car model or name</label>
-                <input
-                  value={carModel} onChange={e => setCarModel(e.target.value)}
-                  placeholder="e.g. Swift, Creta, Innova…"
-                  style={{ width:"100%", padding:"14px 16px", border:`2px solid ${detectedCat?S.blue:S.border}`, borderRadius:10, fontSize:15, fontFamily:"'Nunito',sans-serif", background:S.white, color:S.navy }}
-                />
+              {/* Model input with glow */}
+              <div style={{marginBottom:24}}>
+                <label style={{display:"block",fontSize:13,fontWeight:700,color:"#374151",marginBottom:8}}>Car model or brand name</label>
+                <div style={{position:"relative"}}>
+                  <span style={{position:"absolute",left:16,top:"50%",transform:"translateY(-50%)",fontSize:18}}>🚗</span>
+                  <input className="cpp-input" value={carModel} onChange={e=>setCarModel(e.target.value)}
+                    placeholder="Swift, Creta, Fortuner, Innova…"
+                    style={{paddingLeft:48,border:`2px solid ${detectedCat?"#6366f1":"rgba(148,163,184,0.3)"}`,boxShadow:detectedCat?"0 0 0 4px rgba(99,102,241,0.1)":undefined}} />
+                </div>
                 {detectedCat && (
-                  <div style={{ marginTop:10, padding:"10px 14px", background:S.blueL, borderRadius:8, display:"flex", alignItems:"center", gap:10 }}>
-                    <span style={{ fontSize:20 }}>{cfg.vehicleCategories.find(c => c.id === detectedCat)?.icon}</span>
+                  <div style={{marginTop:12,padding:"12px 16px",background:"linear-gradient(135deg,#eff6ff,#f5f3ff)",border:"2px solid #c7d2fe",borderRadius:14,display:"flex",alignItems:"center",gap:12}}>
+                    <span style={{fontSize:28}}>{cfg.vehicleCategories.find(c=>c.id===detectedCat)?.icon}</span>
                     <div>
-                      <div style={{ fontSize:13, fontWeight:700, color:S.navy }}>Detected: {cfg.vehicleCategories.find(c => c.id === detectedCat)?.label}</div>
-                      <div style={{ fontSize:12, color:S.gray }}>Not right? Select manually below.</div>
+                      <div style={{fontSize:14,fontWeight:700,color:"#4338ca"}}>Detected: {cfg.vehicleCategories.find(c=>c.id===detectedCat)?.label}</div>
+                      <div style={{fontSize:12,color:"#6366f1"}}>Tap below to change if incorrect</div>
                     </div>
+                    <div style={{marginLeft:"auto",fontSize:20}}>✅</div>
                   </div>
                 )}
               </div>
 
-              {/* Manual vehicle cards */}
-              <div style={{ marginBottom:24 }}>
-                <div style={{ fontSize:13, fontWeight:700, color:S.navy, marginBottom:12 }}>Select vehicle type</div>
-                <div style={{ display:"grid", gridTemplateColumns:"repeat(3, 1fr)", gap:12 }}>
-                  {cfg.vehicleCategories.map(cat => (
-                    <Card key={cat.id} selected={activeCat === cat.id}
-                      onClick={() => { setDetectedCat(cat.id); setCatConfirmed(true); setCarModel(prev => prev || cat.label); }}>
-                      <div style={{ textAlign:"center" }}>
-                        <div style={{ fontSize:36, marginBottom:8 }}>{cat.icon}</div>
-                        <div style={{ fontSize:13, fontWeight:700, color:S.navy }}>{cat.label}</div>
+              {/* Vehicle type cards */}
+              <div style={{marginBottom:24}}>
+                <div style={{fontSize:13,fontWeight:700,color:"#374151",marginBottom:12}}>Or select your vehicle type</div>
+                <div className="cpp-vehicle-grid" style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14}}>
+                  {cfg.vehicleCategories.map((cat,i)=>{
+                    const gradients=["linear-gradient(135deg,#eff6ff,#dbeafe)","linear-gradient(135deg,#f0fdf4,#dcfce7)","linear-gradient(135deg,#fffbeb,#fef3c7)"];
+                    const borders=["#6366f1","#10b981","#f59e0b"];
+                    const selected=activeCat===cat.id;
+                    return (
+                      <div key={cat.id} className={`cpp-card ${selected?"selected":""}`}
+                        onClick={()=>{setDetectedCat(cat.id);setCatConfirmed(true);setCarModel(prev=>prev||cat.id);}}
+                        style={selected?{}:{background:gradients[i]}}>
+                        <div style={{textAlign:"center"}}>
+                          <div style={{fontSize:40,marginBottom:10,filter:selected?"drop-shadow(0 4px 8px rgba(99,102,241,0.4))":undefined}}>{cat.icon}</div>
+                          <div style={{fontSize:13,fontWeight:700,color:"#0f172a"}}>{cat.label}</div>
+                          {activeCat===cat.id && selectedPlan===null && (
+                            <div style={{marginTop:8}}>
+                              {cfg.monthlyPlans.map(p=>(
+                                <div key={p.id} style={{fontSize:11,color:"#6366f1",fontWeight:600}}>{p.icon} from {inr(p.prices[cat.id])}</div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </Card>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 
-              {/* Price preview */}
+              {/* Price preview banner */}
               {activeCat && (
-                <div style={{ background:S.greenL, border:`1px solid ${S.green}20`, borderRadius:10, padding:"12px 16px", marginBottom:24 }}>
-                  <div style={{ fontSize:13, fontWeight:700, color:S.green, marginBottom:8 }}>💡 Plans available for your vehicle</div>
-                  <div style={{ display:"flex", gap:16 }}>
-                    {cfg.monthlyPlans.map(p => (
-                      <div key={p.id} style={{ textAlign:"center" }}>
-                        <div style={{ fontSize:12, color:S.gray }}>{p.icon} {p.name}</div>
-                        <div style={{ fontSize:16, fontWeight:800, color:S.navy }}>{inr(p.prices[activeCat])}</div>
-                        <div style={{ fontSize:11, color:S.gray }}>/month</div>
-                      </div>
-                    ))}
-                  </div>
+                <div style={{marginBottom:28,padding:"16px 20px",background:"linear-gradient(135deg,#1e1b4b,#312e81)",borderRadius:16,display:"flex",gap:20,alignItems:"center",flexWrap:"wrap"}}>
+                  <div style={{fontSize:13,color:"rgba(199,210,254,0.8)",fontWeight:600,flexShrink:0}}>💡 Plans for your {catLabel}:</div>
+                  {cfg.monthlyPlans.map(p=>(
+                    <div key={p.id} style={{textAlign:"center"}}>
+                      <div style={{fontSize:12,color:"rgba(199,210,254,0.7)"}}>{p.icon} {p.name}</div>
+                      <div style={{fontSize:18,fontWeight:800,color:"white",fontFamily:"'Playfair Display',serif"}}>{inr(p.prices[activeCat])}</div>
+                      <div style={{fontSize:10,color:"rgba(199,210,254,0.5)"}}>/month</div>
+                    </div>
+                  ))}
                 </div>
               )}
 
-              <div style={{ display:"flex", justifyContent:"flex-end" }}>
-                <Btn label="Continue → Area" onClick={() => goTo(2)} disabled={!step1Ok} />
+              <div style={{display:"flex",justifyContent:"flex-end"}}>
+                <button className="cpp-btn-primary" onClick={()=>goTo(2)} disabled={!step1Ok}>
+                  Continue → {step1Ok&&<span style={{marginLeft:4}}>✓</span>}
+                </button>
               </div>
             </div>
           )}
 
-          {/* ── STEP 2: Your Area ────────────────────────────────────────── */}
-          {step === 2 && (
-            <div>
-              <div style={{ marginBottom:24 }}>
-                <div style={{ fontSize:11, color:S.blue, fontWeight:700, letterSpacing:1, textTransform:"uppercase", marginBottom:6 }}>Step 2 of 6</div>
-                <h2 style={{ fontSize:26, fontWeight:800, color:S.navy, margin:"0 0 8px" }}>Check your area</h2>
-                <p style={{ color:S.gray, fontSize:14, margin:0 }}>Enter your 6-digit pincode to check serviceability.</p>
-              </div>
+          {/* ── STEP 2 ────────────────────────────────────────────────────── */}
+          {step===2 && (
+            <div style={{background:"rgba(255,255,255,0.8)",backdropFilter:"blur(16px)",borderRadius:24,padding:"32px",border:"1px solid rgba(255,255,255,0.8)",boxShadow:"0 8px 32px rgba(99,102,241,0.08)"}}>
+              <SectionHead n={2} total={6} title="Check your area" sub="Enter your 6-digit pincode to confirm we serve your location." />
 
-              <div style={{ marginBottom:20 }}>
-                <label style={{ display:"block", fontSize:13, fontWeight:700, color:S.navy, marginBottom:8 }}>Pincode</label>
-                <input
-                  value={pincode} onChange={e => setPincode(e.target.value.replace(/\D/g,"").slice(0,6))}
-                  placeholder="e.g. 395007"
-                  style={{ width:"100%", maxWidth:280, padding:"14px 16px", border:`2px solid ${pincodeStatus==="ok"?S.green:pincodeStatus==="waitlist"?"#EF4444":S.border}`, borderRadius:10, fontSize:18, fontWeight:700, letterSpacing:4, fontFamily:"'Nunito',sans-serif", color:S.navy }}
-                />
-                {pincodeStatus === "ok" && (
-                  <div style={{ marginTop:10, padding:"10px 14px", background:S.greenL, borderRadius:8, display:"inline-flex", alignItems:"center", gap:8 }}>
-                    <span style={{ color:S.green, fontSize:18 }}>✅</span>
+              <div style={{marginBottom:28}}>
+                <label style={{display:"block",fontSize:13,fontWeight:700,color:"#374151",marginBottom:8}}>Your Pincode</label>
+                <div style={{position:"relative",maxWidth:300}}>
+                  <span style={{position:"absolute",left:16,top:"50%",transform:"translateY(-50%)",fontSize:18}}>📍</span>
+                  <input className="cpp-input" value={pincode} onChange={e=>setPincode(e.target.value.replace(/\D/g,"").slice(0,6))}
+                    placeholder="6-digit pincode"
+                    style={{paddingLeft:48,fontSize:22,fontWeight:800,letterSpacing:6,border:`2px solid ${pincodeStatus==="ok"?"#10b981":pincodeStatus==="waitlist"?"#ef4444":"rgba(148,163,184,0.3)"}`,boxShadow:pincodeStatus==="ok"?"0 0 0 4px rgba(16,185,129,0.1)":pincodeStatus==="waitlist"?"0 0 0 4px rgba(239,68,68,0.1)":undefined}} />
+                </div>
+                {pincodeStatus==="ok" && (
+                  <div style={{marginTop:14,padding:"14px 18px",background:"linear-gradient(135deg,#f0fdf4,#dcfce7)",border:"2px solid #86efac",borderRadius:14,display:"flex",alignItems:"center",gap:12}}>
+                    <div style={{width:40,height:40,borderRadius:"50%",background:"linear-gradient(135deg,#10b981,#059669)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>✅</div>
                     <div>
-                      <div style={{ fontSize:13, fontWeight:700, color:S.green }}>Great news — we serve your area!</div>
-                      <div style={{ fontSize:12, color:S.gray }}>{cfg.serviceablePincodes.find(p => p.code === pincode)?.label}</div>
+                      <div style={{fontSize:15,fontWeight:700,color:"#065f46"}}>Great news — we serve your area!</div>
+                      <div style={{fontSize:12,color:"#059669",marginTop:2}}>{cfg.serviceablePincodes.find(p=>p.code===pincode)?.label}</div>
                     </div>
                   </div>
                 )}
-                {pincodeStatus === "waitlist" && (
-                  <div style={{ marginTop:10, padding:"10px 14px", background:"#FEF2F2", borderRadius:8, display:"inline-flex", alignItems:"center", gap:8 }}>
-                    <span style={{ fontSize:18 }}>⏳</span>
+                {pincodeStatus==="waitlist" && (
+                  <div style={{marginTop:14,padding:"14px 18px",background:"linear-gradient(135deg,#fef2f2,#fee2e2)",border:"2px solid #fca5a5",borderRadius:14,display:"flex",alignItems:"center",gap:12}}>
+                    <div style={{fontSize:32}}>⏳</div>
                     <div>
-                      <div style={{ fontSize:13, fontWeight:700, color:"#DC2626" }}>Not yet in your area</div>
-                      <div style={{ fontSize:12, color:S.gray }}>We'll add you to the waitlist and notify you.</div>
+                      <div style={{fontSize:15,fontWeight:700,color:"#991b1b"}}>Not yet in your area</div>
+                      <div style={{fontSize:12,color:"#dc2626"}}>We're expanding! You'll be added to our waitlist.</div>
                     </div>
                   </div>
                 )}
               </div>
 
-              {/* Serviceable pincodes list */}
-              <div style={{ marginBottom:28 }}>
-                <div style={{ fontSize:13, color:S.gray, marginBottom:10 }}>Currently serving these areas in Surat:</div>
-                <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
-                  {cfg.serviceablePincodes.map(p => (
-                    <button key={p.code} onClick={() => setPincode(p.code)}
-                      style={{ padding:"6px 12px", borderRadius:20, border:`1px solid ${pincode===p.code?S.blue:S.border}`, background:pincode===p.code?S.blueL:S.white, color:pincode===p.code?S.blue:S.navy, fontSize:12, fontWeight:600, cursor:"pointer", fontFamily:"'Nunito',sans-serif" }}>
-                      {p.label} · {p.code}
-                    </button>
-                  ))}
+              <div style={{marginBottom:28}}>
+                <div style={{fontSize:13,fontWeight:700,color:"#374151",marginBottom:12}}>Tap your area</div>
+                <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
+                  {cfg.serviceablePincodes.map(p=>{
+                    const sel=pincode===p.code;
+                    return (
+                      <button key={p.code} onClick={()=>setPincode(p.code)}
+                        style={{padding:"8px 14px",borderRadius:50,border:`2px solid ${sel?"#6366f1":"rgba(148,163,184,0.3)"}`,background:sel?"linear-gradient(135deg,#eff6ff,#f5f3ff)":"rgba(255,255,255,0.8)",color:sel?"#4338ca":"#475569",fontSize:12,fontWeight:sel?700:500,cursor:"pointer",fontFamily:"'Sora',sans-serif",transition:"all 0.2s",boxShadow:sel?"0 4px 12px rgba(99,102,241,0.2)":undefined}}>
+                        {sel?"📍 ":""}{p.label}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
-              <div style={{ display:"flex", justifyContent:"space-between" }}>
-                <Btn label="← Back" onClick={() => goTo(1)} secondary />
-                <Btn label="Continue → Plan" onClick={() => goTo(3)} disabled={!step2Ok} />
+              <div style={{display:"flex",justifyContent:"space-between"}}>
+                <button className="cpp-btn-ghost" onClick={()=>goTo(1)}>← Back</button>
+                <button className="cpp-btn-primary" onClick={()=>goTo(3)} disabled={!step2Ok}>Continue → Plan</button>
               </div>
             </div>
           )}
 
-          {/* ── STEP 3: Choose Plan ──────────────────────────────────────── */}
-          {step === 3 && (
-            <div>
-              <div style={{ marginBottom:24 }}>
-                <div style={{ fontSize:11, color:S.blue, fontWeight:700, letterSpacing:1, textTransform:"uppercase", marginBottom:6 }}>Step 3 of 6</div>
-                <h2 style={{ fontSize:26, fontWeight:800, color:S.navy, margin:"0 0 8px" }}>Choose your plan</h2>
-                <p style={{ color:S.gray, fontSize:14, margin:0 }}>Monthly subscription or a visit pack — you decide.</p>
-              </div>
+          {/* ── STEP 3 ────────────────────────────────────────────────────── */}
+          {step===3 && (
+            <div style={{background:"rgba(255,255,255,0.8)",backdropFilter:"blur(16px)",borderRadius:24,padding:"32px",border:"1px solid rgba(255,255,255,0.8)",boxShadow:"0 8px 32px rgba(99,102,241,0.08)"}}>
+              <SectionHead n={3} total={6} title="Choose your plan" sub="Monthly subscription for daily washes, or a visit pack for occasional cleaning." />
 
-              {/* Monthly / Pack toggle */}
-              <div style={{ display:"inline-flex", background:"#F1F5F9", borderRadius:50, padding:4, marginBottom:24, gap:4 }}>
-                {(["monthly","pack"] as const).map(m => (
-                  <button key={m} onClick={() => setPlanMode(m)}
-                    style={{ padding:"8px 24px", borderRadius:50, border:"none", background:planMode===m?S.white:"none", color:planMode===m?S.navy:S.gray, fontWeight:planMode===m?700:500, fontSize:14, cursor:"pointer", fontFamily:"'Nunito',sans-serif", boxShadow:planMode===m?"0 2px 8px rgba(0,0,0,0.1)":"none", transition:"all 0.2s" }}>
-                    {m === "monthly" ? "🔄 Monthly" : "📦 Visit Pack"}
+              {/* Mode toggle */}
+              <div style={{display:"inline-flex",background:"rgba(241,245,249,0.8)",borderRadius:50,padding:4,marginBottom:28,gap:4,border:"1px solid rgba(148,163,184,0.2)"}}>
+                {(["monthly","pack"] as const).map(m=>(
+                  <button key={m} onClick={()=>setPlanMode(m)}
+                    style={{padding:"10px 28px",borderRadius:50,border:"none",background:planMode===m?"linear-gradient(135deg,#6366f1,#8b5cf6)":"none",color:planMode===m?"white":"#64748b",fontWeight:planMode===m?700:500,fontSize:14,cursor:"pointer",fontFamily:"'Sora',sans-serif",boxShadow:planMode===m?"0 4px 14px rgba(99,102,241,0.35)":undefined,transition:"all 0.25s"}}>
+                    {m==="monthly"?"🔄 Monthly Subscription":"📦 Visit Packs"}
                   </button>
                 ))}
               </div>
 
               {/* Monthly plans */}
-              {planMode === "monthly" && (
+              {planMode==="monthly" && (
                 <>
-                  <div style={{ display:"grid", gridTemplateColumns:"repeat(3, 1fr)", gap:14, marginBottom:24 }}>
-                    {cfg.monthlyPlans.map(plan => {
-                      const price = plan.prices[activeCat||"hatchback"] || 0;
-                      const perWashCost = Math.round(price / 30);
+                  <div className="cpp-plan-grid" style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:16,marginBottom:28}}>
+                    {cfg.monthlyPlans.map((plan,i)=>{
+                      const price=plan.prices[activeCat||"hatchback"]||0;
+                      const pw=Math.round(price/30);
+                      const colors=[["#6366f1","#eff6ff","#c7d2fe"],["#8b5cf6","#f5f3ff","#ddd6fe"],["#f59e0b","#fffbeb","#fde68a"]];
+                      const[ac,bg,br]=colors[i];
+                      const sel=selectedPlan===plan.id;
                       return (
-                        <Card key={plan.id} selected={selectedPlan===plan.id} onClick={() => setSelectedPlan(plan.id)}>
-                          {plan.popular && <div style={{ position:"absolute", top:-10, left:"50%", transform:"translateX(-50%)", background:"linear-gradient(135deg,#F59E0B,#EF4444)", color:S.white, fontSize:10, fontWeight:800, padding:"3px 12px", borderRadius:20, letterSpacing:0.5, whiteSpace:"nowrap" }}>MOST POPULAR</div>}
-                          <div style={{ textAlign:"center", paddingTop: plan.popular?8:0 }}>
-                            <div style={{ fontSize:28, marginBottom:6 }}>{plan.icon}</div>
-                            <div style={{ fontSize:16, fontWeight:800, color:S.navy, marginBottom:4 }}>{plan.name}</div>
-                            <div style={{ fontSize:22, fontWeight:800, color:selectedPlan===plan.id?S.blue:S.navy, marginBottom:2 }}>{inr(price)}</div>
-                            <div style={{ fontSize:11, color:S.gray, marginBottom:12 }}>₹{perWashCost}/wash · 30 washes</div>
-                            <div style={{ textAlign:"left" }}>
-                              {plan.features.slice(0,4).map((f, i) => (
-                                <div key={i} style={{ display:"flex", alignItems:"center", gap:6, marginBottom:4 }}>
-                                  <span style={{ fontSize:11, color:f.included?S.green:"#CBD5E1", fontWeight:700 }}>{f.included?"✓":"✗"}</span>
-                                  <span style={{ fontSize:11, color:f.included?S.navy:S.gray }}>{f.text}</span>
+                        <div key={plan.id} className={`cpp-card ${sel?"selected":""}`}
+                          onClick={()=>setSelectedPlan(plan.id)}
+                          style={sel?{}:{background:`linear-gradient(160deg,${bg},white)`}}>
+                          {plan.popular && <div style={{position:"absolute",top:-1,left:"50%",transform:"translateX(-50%)",background:`linear-gradient(135deg,${ac},#f59e0b)`,color:"white",fontSize:10,fontWeight:800,padding:"4px 14px",borderRadius:"0 0 10px 10px",letterSpacing:0.5,whiteSpace:"nowrap"}}>⭐ MOST POPULAR</div>}
+                          <div style={{textAlign:"center",paddingTop:plan.popular?12:0}}>
+                            <div style={{fontSize:36,marginBottom:8,filter:`drop-shadow(0 4px 8px ${ac}40)`}}>{plan.icon}</div>
+                            <div style={{fontSize:16,fontWeight:800,color:"#0f172a",marginBottom:4}}>{plan.name}</div>
+                            <div style={{fontSize:26,fontWeight:800,color:sel?"#4f46e5":ac,marginBottom:2,fontFamily:"'Playfair Display',serif"}}>{inr(price)}</div>
+                            <div style={{fontSize:11,color:"#94a3b8",marginBottom:14}}>₹{pw}/wash · 30 washes/month</div>
+                            <div style={{borderTop:`1px dashed ${br}`,paddingTop:10}}>
+                              {plan.features.slice(0,5).map((f,fi)=>(
+                                <div key={fi} style={{display:"flex",alignItems:"center",gap:6,marginBottom:4}}>
+                                  <div style={{width:16,height:16,borderRadius:"50%",background:f.included?`linear-gradient(135deg,${ac},${ac}99)`:"#f1f5f9",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                                    <span style={{fontSize:9,color:f.included?"white":"#cbd5e1",fontWeight:800}}>{f.included?"✓":"×"}</span>
+                                  </div>
+                                  <span style={{fontSize:11,color:f.included?"#374151":"#94a3b8",textAlign:"left"}}>{f.text}</span>
                                 </div>
                               ))}
                             </div>
                           </div>
-                        </Card>
+                        </div>
                       );
                     })}
                   </div>
 
                   {/* Commitment */}
-                  <div style={{ marginBottom:24 }}>
-                    <div style={{ fontSize:14, fontWeight:700, color:S.navy, marginBottom:12 }}>How long do you want to commit?</div>
-                    <div style={{ display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:10 }}>
-                      {cfg.commitments.map(c => (
-                        <Card key={c.id} selected={commitment===c.id} onClick={() => setCommitment(c.id)} highlight={c.highlight==="best"}>
-                          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
-                            <div>
-                              <div style={{ fontSize:14, fontWeight:700, color:S.navy }}>{c.term}</div>
-                              <div style={{ fontSize:11, color:S.gray, marginTop:2 }}>{c.perk}</div>
+                  <div style={{marginBottom:24}}>
+                    <div style={{fontSize:14,fontWeight:700,color:"#374151",marginBottom:12}}>How long will you commit?</div>
+                    <div className="cpp-commit-grid" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+                      {cfg.commitments.map(c=>{
+                        const sel=commitment===c.id;
+                        const isBest=c.highlight==="best";
+                        return (
+                          <div key={c.id} className={`cpp-card ${sel?(isBest?"gold-selected":"selected"):""}`}
+                            onClick={()=>setCommitment(c.id)}
+                            style={!sel&&isBest?{background:"linear-gradient(135deg,#fffbeb,#fff7ed)",border:"2px dashed #fcd34d"}:{}}>
+                            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+                              <div>
+                                <div style={{fontSize:14,fontWeight:700,color:"#0f172a"}}>{c.term}</div>
+                                <div style={{fontSize:11,color:"#64748b",marginTop:2,lineHeight:1.4}}>{c.perk}</div>
+                              </div>
+                              <div style={{flexShrink:0,marginLeft:8}}>
+                                <span className="cpp-badge" style={{background:isBest?"rgba(245,158,11,0.15)":sel?"rgba(99,102,241,0.15)":"rgba(148,163,184,0.1)",color:isBest?"#b45309":sel?"#4f46e5":"#64748b",fontWeight:700}}>
+                                  {c.discountLabel}
+                                </span>
+                              </div>
                             </div>
-                            <div style={{ flexShrink:0, marginLeft:8 }}>
-                              <span style={{ fontSize:12, fontWeight:700, color:c.highlight?"#D97706":S.blue, background:c.highlight?S.amberL:S.blueL, padding:"3px 8px", borderRadius:12 }}>
-                                {c.discountLabel}
-                              </span>
-                            </div>
+                            {isBest && <div style={{marginTop:6,fontSize:10,fontWeight:800,color:"#d97706",letterSpacing:0.5}}>🏆 BEST VALUE</div>}
                           </div>
-                          {c.highlight === "best" && <div style={{ fontSize:10, color:S.amber, fontWeight:700, marginTop:6 }}>⭐ BEST VALUE</div>}
-                        </Card>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 </>
               )}
 
               {/* Pack mode */}
-              {planMode === "pack" && (
-                <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:14, marginBottom:24 }}>
-                  {cfg.packs.map(pack => {
-                    const nested = (pack as any).prices;
-                    let dispPrice = 0;
-                    if (nested) {
-                      const washObj = nested.shampoo ?? nested.waterWash ?? Object.values(nested)[0];
-                      if (washObj && typeof washObj === "object") dispPrice = (washObj as any)[vehicleCat] ?? (washObj as any).hatchback ?? 0;
-                    }
-                    if (!dispPrice && typeof (pack as any).price === "number") dispPrice = (pack as any).price;
-                    return (
-                      <Card key={pack.id} selected={selectedPack===pack.id} onClick={() => setSelectedPack(pack.id)}>
-                        <div style={{ textAlign:"center" }}>
-                          <div style={{ fontSize:28, marginBottom:6 }}>{pack.icon}</div>
-                          <div style={{ fontSize:15, fontWeight:800, color:S.navy, marginBottom:4 }}>{pack.name}</div>
-                          {dispPrice > 0 && <div style={{ fontSize:20, fontWeight:800, color:S.blue, marginBottom:4 }}>{inr(dispPrice)}</div>}
-                          {(pack as any).discount && <span style={{ fontSize:11, color:S.green, fontWeight:700, background:S.greenL, padding:"2px 8px", borderRadius:10 }}>{(pack as any).discount}</span>}
-                          <div style={{ fontSize:11, color:S.gray, marginTop:8 }}>{(pack as any).description}</div>
+              {planMode==="pack" && (
+                <>
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14,marginBottom:24}}>
+                    {cfg.packs.map((pack,i)=>{
+                      const nested=(pack as any).prices;
+                      let dp=0;
+                      if(nested){const w=nested.shampoo??nested.waterWash??Object.values(nested)[0]; if(w&&typeof w==="object")dp=(w as any)[vehicleCat]??(w as any).hatchback??0;}
+                      if(!dp&&typeof(pack as any).price==="number")dp=(pack as any).price;
+                      const colors=["#6366f1","#10b981","#f59e0b"];
+                      const sel=selectedPack===pack.id;
+                      return (
+                        <div key={pack.id} className={`cpp-card ${sel?"selected":""}`} onClick={()=>setSelectedPack(pack.id)}>
+                          <div style={{textAlign:"center"}}>
+                            <div style={{fontSize:32,marginBottom:8}}>{pack.icon}</div>
+                            <div style={{fontSize:15,fontWeight:800,color:"#0f172a"}}>{pack.name}</div>
+                            {dp>0&&<div style={{fontSize:22,fontWeight:800,color:colors[i],fontFamily:"'Playfair Display',serif",margin:"6px 0"}}>{inr(dp)}</div>}
+                            {(pack as any).discount&&<span className="cpp-badge" style={{background:"rgba(16,185,129,0.12)",color:"#059669"}}>{(pack as any).discount}</span>}
+                            <div style={{fontSize:11,color:"#94a3b8",marginTop:8}}>{(pack as any).description}</div>
+                          </div>
                         </div>
-                      </Card>
-                    );
-                  })}
-                </div>
-              )}
-
-              {/* Pack wash type */}
-              {planMode === "pack" && selectedPack && selectedPack !== "onetime" && (
-                <div style={{ marginBottom:24, padding:"16px", background:S.blueL, borderRadius:12 }}>
-                  <div style={{ fontSize:13, fontWeight:700, color:S.navy, marginBottom:10 }}>Select wash type for your pack</div>
-                  <div style={{ display:"flex", gap:10 }}>
-                    {[["waterWash","Water Wash","💧"],["shampoo","Shampoo","🧴"],["shampooWax","Shampoo + Wax","✨"]].map(([id,name,icon]) => (
-                      <button key={id} onClick={() => setSelectedWashType(id as string)}
-                        style={{ flex:1, padding:"10px 8px", borderRadius:8, border:`2px solid ${_washRef.current===id?S.blue:S.border}`, background:_washRef.current===id?S.white:S.blueL, color:S.navy, fontWeight:600, fontSize:12, cursor:"pointer", fontFamily:"'Nunito',sans-serif", transition:"all 0.15s" }}>
-                        <div>{icon}</div>
-                        <div>{name}</div>
-                      </button>
-                    ))}
+                      );
+                    })}
                   </div>
-                </div>
+                  {selectedPack&&selectedPack!=="onetime"&&(
+                    <div style={{padding:"16px 20px",background:"linear-gradient(135deg,#f5f3ff,#ede9fe)",borderRadius:16,marginBottom:24,border:"2px solid #ddd6fe"}}>
+                      <div style={{fontSize:13,fontWeight:700,color:"#4338ca",marginBottom:10}}>Select wash type for this pack</div>
+                      <div style={{display:"flex",gap:10}}>
+                        {[["waterWash","💧 Water Wash"],["shampoo","🧴 Shampoo"],["shampooWax","✨ Shampoo + Wax"]].map(([id,lbl])=>(
+                          <button key={id} onClick={()=>setSelectedWashType(id as string)}
+                            style={{flex:1,padding:"10px 8px",borderRadius:10,border:`2px solid ${_washRef.current===id?"#6366f1":"rgba(148,163,184,0.3)"}`,background:_washRef.current===id?"white":"transparent",color:"#0f172a",fontWeight:_washRef.current===id?700:500,fontSize:12,cursor:"pointer",fontFamily:"'Sora',sans-serif",boxShadow:_washRef.current===id?"0 4px 12px rgba(99,102,241,0.2)":undefined,transition:"all 0.2s"}}>
+                            {lbl}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
 
-              <div style={{ display:"flex", justifyContent:"space-between" }}>
-                <Btn label="← Back" onClick={() => goTo(2)} secondary />
-                <Btn label="Continue → Add-ons" onClick={() => goTo(4)} disabled={!step3Ok} />
+              <div style={{display:"flex",justifyContent:"space-between"}}>
+                <button className="cpp-btn-ghost" onClick={()=>goTo(2)}>← Back</button>
+                <button className="cpp-btn-primary" onClick={()=>goTo(4)} disabled={!step3Ok}>Continue → Add-ons</button>
               </div>
             </div>
           )}
 
-          {/* ── STEP 4: Add-ons ──────────────────────────────────────────── */}
-          {step === 4 && (
-            <div>
-              <div style={{ marginBottom:24 }}>
-                <div style={{ fontSize:11, color:S.blue, fontWeight:700, letterSpacing:1, textTransform:"uppercase", marginBottom:6 }}>Step 4 of 6</div>
-                <h2 style={{ fontSize:26, fontWeight:800, color:S.navy, margin:"0 0 8px" }}>Enhance your wash</h2>
-                <p style={{ color:S.gray, fontSize:14, margin:0 }}>Optional add-ons billed per visit alongside your plan.</p>
-              </div>
+          {/* ── STEP 4 ────────────────────────────────────────────────────── */}
+          {step===4 && (
+            <div style={{background:"rgba(255,255,255,0.8)",backdropFilter:"blur(16px)",borderRadius:24,padding:"32px",border:"1px solid rgba(255,255,255,0.8)",boxShadow:"0 8px 32px rgba(99,102,241,0.08)"}}>
+              <SectionHead n={4} total={6} title="Enhance your wash" sub="Optional add-ons billed per visit. Upgrade anytime." />
 
-              {/* Combo bundles */}
+              {/* Combos */}
               {(cfg as any).comboBundles && (
-                <div style={{ marginBottom:24 }}>
-                  <div style={{ fontSize:13, fontWeight:700, color:S.navy, marginBottom:12 }}>🔥 Popular Combos (Save more)</div>
-                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
-                    {((cfg as any).comboBundles||[]).map((b: any) => {
-                      const allSelected = b.addonIds.every((id: string) => addons.includes(id));
-                      const bundlePrice = b.prices?.[vehicleCat] ?? b.prices?.hatchback ?? 0;
-                      const savings = b.savings?.[vehicleCat] ?? b.savings?.hatchback ?? 0;
+                <div style={{marginBottom:28}}>
+                  <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
+                    <span style={{fontSize:16}}>🔥</span>
+                    <span style={{fontSize:14,fontWeight:700,color:"#0f172a"}}>Bundle Deals — Save More</span>
+                  </div>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+                    {((cfg as any).comboBundles||[]).map((b:any)=>{
+                      const allSel=b.addonIds.every((id:string)=>addons.includes(id));
+                      const bp=b.prices?.[vehicleCat]??b.prices?.hatchback??0;
+                      const sv=b.savings?.[vehicleCat]??b.savings?.hatchback??0;
                       return (
-                        <Card key={b.id} selected={allSelected} highlight onClick={() => {
-                          if (allSelected) {
-                            setAddons(prev => prev.filter(id => !b.addonIds.includes(id)));
-                          } else {
-                            setAddons(prev => [...new Set([...prev, ...b.addonIds])]);
-                          }
-                        }}>
-                          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
+                        <div key={b.id} className={`cpp-card ${allSel?"gold-selected":""}`}
+                          onClick={()=>{ if(allSel){setAddons(p=>p.filter(id=>!b.addonIds.includes(id)));}else{setAddons(p=>[...new Set([...p,...b.addonIds])]);} }}
+                          style={!allSel?{background:"linear-gradient(135deg,#fffbeb,#fff7ed)",border:"2px dashed #fcd34d"}:{}}>
+                          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
                             <div>
-                              <div style={{ fontSize:13, fontWeight:700, color:S.navy }}>{b.name}</div>
-                              <div style={{ fontSize:11, color:S.gray, marginTop:2 }}>{b.addonIds.join(" + ")}</div>
+                              <div style={{fontSize:14,fontWeight:700,color:"#0f172a"}}>{b.name}</div>
+                              <div style={{fontSize:11,color:"#64748b",marginTop:2}}>{b.addonIds.join(" + ")}</div>
                             </div>
-                            <div style={{ textAlign:"right" }}>
-                              <div style={{ fontSize:16, fontWeight:800, color:S.amber }}>{inr(bundlePrice)}</div>
-                              <div style={{ fontSize:11, color:S.green }}>Save {inr(savings)}</div>
+                            <div style={{textAlign:"right",flexShrink:0,marginLeft:8}}>
+                              <div style={{fontSize:18,fontWeight:800,color:"#d97706",fontFamily:"'Playfair Display',serif"}}>{inr(bp)}</div>
+                              <div style={{fontSize:11,fontWeight:700,color:"#10b981"}}>Save {inr(sv)}</div>
                             </div>
                           </div>
-                        </Card>
+                          <div style={{marginTop:10,fontSize:12,color:allSel?"#4338ca":"#64748b",fontWeight:allSel?700:400}}>
+                            {allSel?"✅ Bundle applied — tap to remove":"Tap to add both together"}
+                          </div>
+                        </div>
                       );
                     })}
                   </div>
@@ -873,184 +873,184 @@ export function CustomerPlanPage() {
               )}
 
               {/* Individual addons */}
-              <div style={{ marginBottom:24 }}>
-                <div style={{ fontSize:13, fontWeight:700, color:S.navy, marginBottom:12 }}>Individual add-ons</div>
-                <div style={{ display:"grid", gap:10 }}>
-                  {cfg.addons.map(addon => {
-                    const price = addon.prices?.[vehicleCat] ?? addon.price;
-                    const selected = addons.includes(addon.id);
+              <div>
+                <div style={{fontSize:14,fontWeight:700,color:"#374151",marginBottom:12}}>Individual Add-ons</div>
+                <div style={{display:"grid",gap:10}}>
+                  {cfg.addons.map((addon,i)=>{
+                    const price=addon.prices?.[vehicleCat]??addon.price;
+                    const sel=addons.includes(addon.id);
+                    const accentColors=["#6366f1","#8b5cf6","#ec4899","#06b6d4","#10b981","#f59e0b","#ef4444"];
+                    const ac=accentColors[i%accentColors.length];
                     return (
                       <div key={addon.id}
-                        onClick={() => setAddons(prev => prev.includes(addon.id) ? prev.filter(a => a!==addon.id) : [...prev, addon.id])}
-                        style={{ display:"flex", alignItems:"center", gap:14, padding:"14px 16px", border:`2px solid ${selected?S.blue:S.border}`, borderRadius:12, cursor:"pointer", background:selected?S.blueL:S.white, transition:"all 0.15s" }}>
-                        <div style={{ width:22, height:22, borderRadius:4, border:`2px solid ${selected?S.blue:S.border}`, background:selected?S.blue:"transparent", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, color:S.white, fontSize:14, fontWeight:700 }}>
-                          {selected && "✓"}
+                        onClick={()=>setAddons(p=>p.includes(addon.id)?p.filter(a=>a!==addon.id):[...p,addon.id])}
+                        style={{display:"flex",alignItems:"center",gap:14,padding:"14px 18px",border:`2px solid ${sel?ac:"rgba(148,163,184,0.25)"}`,borderRadius:14,cursor:"pointer",background:sel?`linear-gradient(135deg,${ac}10,${ac}06)`:"rgba(255,255,255,0.9)",transition:"all 0.2s",boxShadow:sel?`0 4px 16px ${ac}25`:"0 1px 4px rgba(0,0,0,0.04)"}}>
+                        {/* Custom checkbox */}
+                        <div style={{width:22,height:22,borderRadius:6,border:`2px solid ${sel?ac:"rgba(148,163,184,0.4)"}`,background:sel?`linear-gradient(135deg,${ac},${ac}cc)`:"white",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,transition:"all 0.2s",boxShadow:sel?`0 2px 8px ${ac}40`:undefined}}>
+                          {sel&&<span style={{color:"white",fontSize:13,fontWeight:800}}>✓</span>}
                         </div>
-                        <div style={{ flex:1 }}>
-                          <div style={{ fontSize:14, fontWeight:700, color:S.navy }}>{addon.name}</div>
-                          <div style={{ fontSize:11, color:S.gray }}>{addon.description}</div>
-                          <div style={{ fontSize:11, color:S.gray, marginTop:2 }}>{addon.unit}</div>
+                        <div style={{flex:1}}>
+                          <div style={{fontSize:14,fontWeight:700,color:"#0f172a"}}>{addon.name}</div>
+                          <div style={{fontSize:11,color:"#64748b",marginTop:1}}>{addon.description}</div>
+                          <div style={{fontSize:10,color:"#94a3b8",marginTop:2,textTransform:"uppercase",letterSpacing:0.5}}>{addon.unit}</div>
                         </div>
-                        <div style={{ fontSize:16, fontWeight:800, color:selected?S.blue:S.navy, flexShrink:0 }}>{inr(price)}</div>
+                        <div style={{fontSize:18,fontWeight:800,color:sel?ac:"#0f172a",fontFamily:"'Playfair Display',serif",flexShrink:0}}>{inr(price)}</div>
                       </div>
                     );
                   })}
                 </div>
               </div>
 
-              {addons.length === 0 && (
-                <div style={{ padding:"12px 16px", background:S.bg, borderRadius:8, fontSize:13, color:S.gray, marginBottom:24 }}>
-                  No add-ons selected — you can always upgrade later.
-                </div>
-              )}
+              {addons.length===0&&<div style={{textAlign:"center",padding:"16px",color:"#94a3b8",fontSize:13,marginTop:12}}>No add-ons selected. You can skip this step.</div>}
 
-              <div style={{ display:"flex", justifyContent:"space-between" }}>
-                <Btn label="← Back" onClick={() => goTo(3)} secondary />
-                <Btn label="Continue → Details" onClick={() => goTo(5)} />
+              <div style={{display:"flex",justifyContent:"space-between",marginTop:28}}>
+                <button className="cpp-btn-ghost" onClick={()=>goTo(3)}>← Back</button>
+                <button className="cpp-btn-primary" onClick={()=>goTo(5)}>
+                  Continue → Details {addons.length>0&&`(+${addons.length} add-on${addons.length>1?"s":""})`}
+                </button>
               </div>
             </div>
           )}
 
-          {/* ── STEP 5: Your Details ─────────────────────────────────────── */}
-          {step === 5 && (
-            <div>
-              <div style={{ marginBottom:24 }}>
-                <div style={{ fontSize:11, color:S.blue, fontWeight:700, letterSpacing:1, textTransform:"uppercase", marginBottom:6 }}>Step 5 of 6</div>
-                <h2 style={{ fontSize:26, fontWeight:800, color:S.navy, margin:"0 0 8px" }}>Your details</h2>
-                <p style={{ color:S.gray, fontSize:14, margin:0 }}>We'll use this to confirm your booking and send updates.</p>
-              </div>
+          {/* ── STEP 5 ────────────────────────────────────────────────────── */}
+          {step===5 && (
+            <div style={{background:"rgba(255,255,255,0.8)",backdropFilter:"blur(16px)",borderRadius:24,padding:"32px",border:"1px solid rgba(255,255,255,0.8)",boxShadow:"0 8px 32px rgba(99,102,241,0.08)"}}>
+              <SectionHead n={5} total={6} title="Your details" sub="We'll confirm your booking and send updates to these contacts." />
 
-              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, marginBottom:16 }}>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:16}}>
                 {[
-                  { label:"Full name *", value:custName, onChange:setCustName, placeholder:"e.g. Rajesh Patel" },
-                  { label:"Mobile number *", value:custMobile, onChange:setCustMobile, placeholder:"10-digit number", type:"tel" },
-                  { label:"Email", value:custEmail, onChange:setCustEmail, placeholder:"Optional — for digital invoice", type:"email" },
-                  { label:"Vehicle registration", value:custReg, onChange:setCustReg, placeholder:"e.g. GJ05AB1234" },
-                ].map(({label,value,onChange,placeholder,type}) => (
+                  {label:"Full name *",value:custName,onChange:setCustName,placeholder:"Rajesh Patel",icon:"👤"},
+                  {label:"Mobile number *",value:custMobile,onChange:setCustMobile,placeholder:"10-digit number",type:"tel",icon:"📱"},
+                  {label:"Email address",value:custEmail,onChange:setCustEmail,placeholder:"Optional",type:"email",icon:"✉️"},
+                  {label:"Vehicle registration",value:custReg,onChange:setCustReg,placeholder:"GJ05AB1234",icon:"🔢"},
+                ].map(({label,value,onChange,placeholder,type,icon})=>(
                   <div key={label}>
-                    <label style={{ display:"block", fontSize:12, fontWeight:700, color:S.navy, marginBottom:6 }}>{label}</label>
-                    <input value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} type={type||"text"}
-                      style={{ width:"100%", padding:"12px 14px", border:`1.5px solid ${S.border}`, borderRadius:9, fontSize:14, fontFamily:"'Nunito',sans-serif", color:S.navy, background:S.white }} />
+                    <label style={{display:"block",fontSize:12,fontWeight:700,color:"#374151",marginBottom:6}}>{label}</label>
+                    <div style={{position:"relative"}}>
+                      <span style={{position:"absolute",left:14,top:"50%",transform:"translateY(-50%)",fontSize:15}}>{icon}</span>
+                      <input className="cpp-input" value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder} type={type||"text"} style={{paddingLeft:42}} />
+                    </div>
                   </div>
                 ))}
               </div>
 
-              <div style={{ marginBottom:16 }}>
-                <label style={{ display:"block", fontSize:12, fontWeight:700, color:S.navy, marginBottom:6 }}>Home / Office address *</label>
-                <textarea value={custAddress} onChange={e => setCustAddress(e.target.value)} placeholder="Building, street, landmark…" rows={2}
-                  style={{ width:"100%", padding:"12px 14px", border:`1.5px solid ${S.border}`, borderRadius:9, fontSize:14, fontFamily:"'Nunito',sans-serif", color:S.navy, resize:"vertical" }} />
-              </div>
-
-              <div style={{ marginBottom:16 }}>
-                <label style={{ display:"block", fontSize:12, fontWeight:700, color:S.navy, marginBottom:6 }}>Parking type</label>
-                <div style={{ display:"flex", gap:10 }}>
-                  {[["dedicated","Dedicated spot"],["random","Shared/visitor parking"]].map(([val,lbl]) => (
-                    <button key={val} onClick={() => setParking(val as any)}
-                      style={{ flex:1, padding:"10px", borderRadius:8, border:`2px solid ${parking===val?S.blue:S.border}`, background:parking===val?S.blueL:S.white, color:S.navy, fontWeight:600, fontSize:13, cursor:"pointer", fontFamily:"'Nunito',sans-serif" }}>
-                      {lbl}
-                    </button>
-                  ))}
+              <div style={{marginBottom:16}}>
+                <label style={{display:"block",fontSize:12,fontWeight:700,color:"#374151",marginBottom:6}}>Full address *</label>
+                <div style={{position:"relative"}}>
+                  <span style={{position:"absolute",left:14,top:14,fontSize:15}}>🏠</span>
+                  <textarea className="cpp-input" value={custAddress} onChange={e=>setCustAddress(e.target.value)} placeholder="Building name, street, landmark…" rows={2} style={{paddingLeft:42,resize:"vertical",paddingTop:14}} />
                 </div>
               </div>
 
-              {/* Time preference */}
-              {!isOneTime ? (
-                <div style={{ marginBottom:16 }}>
-                  <label style={{ display:"block", fontSize:12, fontWeight:700, color:S.navy, marginBottom:6 }}>Preferred wash time *</label>
-                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
-                    {cfg.timeSlots.map(slot => (
-                      <button key={slot} onClick={() => setPrefTime(slot)}
-                        style={{ padding:"10px 12px", borderRadius:8, border:`2px solid ${prefTime===slot?S.blue:S.border}`, background:prefTime===slot?S.blueL:S.white, color:S.navy, fontWeight:600, fontSize:12, cursor:"pointer", fontFamily:"'Nunito',sans-serif", textAlign:"left" }}>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:16}}>
+                <div>
+                  <label style={{display:"block",fontSize:12,fontWeight:700,color:"#374151",marginBottom:8}}>Parking</label>
+                  <div style={{display:"flex",gap:8}}>
+                    {[["dedicated","🅿️ Dedicated"],["random","🔀 Shared"]].map(([val,lbl])=>(
+                      <button key={val} onClick={()=>setParking(val as any)}
+                        style={{flex:1,padding:"10px 8px",borderRadius:10,border:`2px solid ${parking===val?"#6366f1":"rgba(148,163,184,0.3)"}`,background:parking===val?"linear-gradient(135deg,#eff6ff,#f5f3ff)":"white",color:"#0f172a",fontWeight:parking===val?700:500,fontSize:12,cursor:"pointer",fontFamily:"'Sora',sans-serif",transition:"all 0.2s"}}>
+                        {lbl}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label style={{display:"block",fontSize:12,fontWeight:700,color:"#374151",marginBottom:8}}>Updates via</label>
+                  <div style={{display:"flex",gap:6}}>
+                    {[["whatsapp","📲 WA"],["email","📧 Email"],["both","Both"]].map(([val,lbl])=>(
+                      <button key={val} onClick={()=>setNotifyPref(val as any)}
+                        style={{flex:1,padding:"10px 6px",borderRadius:10,border:`2px solid ${notifyPref===val?"#6366f1":"rgba(148,163,184,0.3)"}`,background:notifyPref===val?"linear-gradient(135deg,#eff6ff,#f5f3ff)":"white",color:"#0f172a",fontWeight:notifyPref===val?700:500,fontSize:11,cursor:"pointer",fontFamily:"'Sora',sans-serif",transition:"all 0.2s"}}>
+                        {lbl}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {!isOneTime?(
+                <div style={{marginBottom:16}}>
+                  <label style={{display:"block",fontSize:12,fontWeight:700,color:"#374151",marginBottom:8}}>Preferred wash time *</label>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                    {cfg.timeSlots.map(slot=>(
+                      <button key={slot} onClick={()=>setPrefTime(slot)}
+                        style={{padding:"11px 14px",borderRadius:10,border:`2px solid ${prefTime===slot?"#6366f1":"rgba(148,163,184,0.3)"}`,background:prefTime===slot?"linear-gradient(135deg,#eff6ff,#f5f3ff)":"rgba(255,255,255,0.9)",color:"#0f172a",fontWeight:prefTime===slot?700:500,fontSize:12,cursor:"pointer",fontFamily:"'Sora',sans-serif",textAlign:"left",transition:"all 0.2s",boxShadow:prefTime===slot?"0 4px 12px rgba(99,102,241,0.2)":undefined}}>
                         {prefTime===slot?"✓ ":""}{slot}
                       </button>
                     ))}
                   </div>
                 </div>
-              ) : (
-                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, marginBottom:16 }}>
+              ):(
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:16}}>
                   <div>
-                    <label style={{ display:"block", fontSize:12, fontWeight:700, color:S.navy, marginBottom:6 }}>Date *</label>
-                    <input type="date" min={minOneTimeDate} value={oneTimeDate} onChange={e => handleOneTimeDateChange(e.target.value)}
-                      style={{ width:"100%", padding:"12px 14px", border:`1.5px solid ${S.border}`, borderRadius:9, fontSize:14, fontFamily:"'Nunito',sans-serif", color:S.navy }} />
+                    <label style={{display:"block",fontSize:12,fontWeight:700,color:"#374151",marginBottom:6}}>Date *</label>
+                    <input type="date" min={minOneTimeDate} value={oneTimeDate} onChange={e=>handleOneTimeDateChange(e.target.value)} className="cpp-input" />
                   </div>
                   <div>
-                    <label style={{ display:"block", fontSize:12, fontWeight:700, color:S.navy, marginBottom:6 }}>Time slot *</label>
-                    <select value={oneTimeHour} onChange={e => setOneTimeHour(e.target.value)}
-                      style={{ width:"100%", padding:"12px 14px", border:`1.5px solid ${S.border}`, borderRadius:9, fontSize:14, fontFamily:"'Nunito',sans-serif", color:S.navy }}>
+                    <label style={{display:"block",fontSize:12,fontWeight:700,color:"#374151",marginBottom:6}}>Time slot *</label>
+                    <select value={oneTimeHour} onChange={e=>setOneTimeHour(e.target.value)} className="cpp-input">
                       <option value="">Select time</option>
-                      {getOneTimeSlots(oneTimeDate).map(s => <option key={s} value={s}>{s}</option>)}
+                      {getOneTimeSlots(oneTimeDate).map(s=><option key={s} value={s}>{s}</option>)}
                     </select>
                   </div>
                 </div>
               )}
 
-              <div style={{ marginBottom:24 }}>
-                <label style={{ display:"block", fontSize:12, fontWeight:700, color:S.navy, marginBottom:6 }}>How should we reach you?</label>
-                <div style={{ display:"flex", gap:10 }}>
-                  {[["whatsapp","📲 WhatsApp"],["email","📧 Email"],["both","Both"]].map(([val,lbl]) => (
-                    <button key={val} onClick={() => setNotifyPref(val as any)}
-                      style={{ flex:1, padding:"10px", borderRadius:8, border:`2px solid ${notifyPref===val?S.blue:S.border}`, background:notifyPref===val?S.blueL:S.white, color:S.navy, fontWeight:600, fontSize:12, cursor:"pointer", fontFamily:"'Nunito',sans-serif" }}>
-                      {lbl}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div style={{ display:"flex", justifyContent:"space-between" }}>
-                <Btn label="← Back" onClick={() => goTo(4)} secondary />
-                <Btn label="Continue → Review" onClick={() => goTo(6)} disabled={!step5Ok} />
+              <div style={{display:"flex",justifyContent:"space-between",marginTop:8}}>
+                <button className="cpp-btn-ghost" onClick={()=>goTo(4)}>← Back</button>
+                <button className="cpp-btn-primary" onClick={()=>goTo(6)} disabled={!step5Ok}>Continue → Review</button>
               </div>
             </div>
           )}
 
-          {/* ── STEP 6: Review & T&C ─────────────────────────────────────── */}
-          {step === 6 && (
-            <div>
-              <div style={{ marginBottom:24 }}>
-                <div style={{ fontSize:11, color:S.blue, fontWeight:700, letterSpacing:1, textTransform:"uppercase", marginBottom:6 }}>Step 6 of 6</div>
-                <h2 style={{ fontSize:26, fontWeight:800, color:S.navy, margin:"0 0 8px" }}>Review your order</h2>
-                <p style={{ color:S.gray, fontSize:14, margin:0 }}>Confirm the details below before paying.</p>
-              </div>
+          {/* ── STEP 6 ────────────────────────────────────────────────────── */}
+          {step===6 && (
+            <div style={{background:"rgba(255,255,255,0.8)",backdropFilter:"blur(16px)",borderRadius:24,padding:"32px",border:"1px solid rgba(255,255,255,0.8)",boxShadow:"0 8px 32px rgba(99,102,241,0.08)"}}>
+              <SectionHead n={6} total={6} title="Review & Pay" sub="Confirm your order details and complete the payment." />
 
-              {/* Summary card */}
-              <div style={{ background:S.white, border:`1.5px solid ${S.border}`, borderRadius:14, overflow:"hidden", marginBottom:20 }}>
+              {/* Order card */}
+              <div style={{borderRadius:18,overflow:"hidden",marginBottom:24,boxShadow:"0 4px 20px rgba(0,0,0,0.08)"}}>
                 {[
-                  ["Vehicle", `${cfg.vehicleCategories.find(c=>c.id===activeCat)?.icon} ${catLabel}`],
-                  ["Area", `${cfg.serviceablePincodes.find(p=>p.code===pincode)?.label} — ${pincode}`],
-                  ["Plan", selectedPlan ? `${cfg.monthlyPlans.find(p=>p.id===selectedPlan)?.name} / month — ${inr(planPrice)}` : `${cfg.packs.find(p=>p.id===selectedPack)?.name} — ${inr(packPrice)}`],
-                  ...(addons.length > 0 ? [["Add-ons", addons.map(id => cfg.addons.find(a=>a.id===id)?.name).join(", ")]] : []),
-                  ["Name", custName],
-                  ["Mobile", custMobile],
-                  ["Address", `${custAddress}, ${pincode}`],
-                  ["Service time", isOneTime ? `${oneTimeDate} ${oneTimeHour}` : prefTime],
-                ].map(([label, value]) => (
-                  <div key={label} style={{ display:"flex", gap:16, padding:"10px 16px", borderBottom:`1px solid ${S.border}` }}>
-                    <span style={{ fontSize:12, color:S.gray, width:90, flexShrink:0 }}>{label}</span>
-                    <span style={{ fontSize:13, color:S.navy, fontWeight:600 }}>{value}</span>
+                  {icon:"🚗",label:"Vehicle",value:`${cfg.vehicleCategories.find(c=>c.id===activeCat)?.icon} ${catLabel}`,bg:"#eff6ff"},
+                  {icon:"📍",label:"Area",value:`${cfg.serviceablePincodes.find(p=>p.code===pincode)?.label} — ${pincode}`,bg:"#f0fdf4"},
+                  {icon:"📋",label:"Plan",value:selectedPlan?`${cfg.monthlyPlans.find(p=>p.id===selectedPlan)?.icon} ${cfg.monthlyPlans.find(p=>p.id===selectedPlan)?.name} — ${inr(planPrice)}/month`:`${cfg.packs.find(p=>p.id===selectedPack)?.name} — ${inr(packPrice)}`,bg:"#f5f3ff"},
+                  ...(addons.length>0?[{icon:"✨",label:"Add-ons",value:addons.map(id=>cfg.addons.find(a=>a.id===id)?.name).join(", "),bg:"#fffbeb"}]:[]),
+                  {icon:"👤",label:"Name",value:custName,bg:"#f8fafc"},
+                  {icon:"📱",label:"Mobile",value:custMobile,bg:"#f8fafc"},
+                  {icon:"⏰",label:"Time",value:isOneTime?`${oneTimeDate} at ${oneTimeHour}`:prefTime,bg:"#f8fafc"},
+                ].map((row,i)=>(
+                  <div key={i} style={{display:"flex",alignItems:"center",gap:14,padding:"12px 18px",background:row.bg,borderBottom:"1px solid rgba(148,163,184,0.1)"}}>
+                    <span style={{fontSize:18,flexShrink:0}}>{row.icon}</span>
+                    <span style={{fontSize:12,color:"#64748b",width:70,flexShrink:0}}>{row.label}</span>
+                    <span style={{fontSize:13,color:"#0f172a",fontWeight:600}}>{row.value}</span>
                   </div>
                 ))}
-                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"14px 16px", background:S.navy }}>
-                  <span style={{ fontSize:14, color:S.white, fontWeight:700 }}>Total payable</span>
-                  <div style={{ textAlign:"right" }}>
-                    <div style={{ fontSize:22, color:S.white, fontWeight:800 }}>{inr(Math.round(finalTotal * 1.18))}</div>
-                    <div style={{ fontSize:11, color:"rgba(255,255,255,0.6)" }}>incl. 18% GST · {inr(finalTotal)} + {inr(Math.round(finalTotal*0.18))} tax</div>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"16px 20px",background:"linear-gradient(135deg,#1e1b4b,#4c1d95)"}}>
+                  <div>
+                    <div style={{fontSize:12,color:"rgba(199,210,254,0.6)"}}>Grand Total (incl. 18% GST)</div>
+                    <div style={{fontSize:13,color:"rgba(199,210,254,0.5)"}}>Base {inr(finalTotal)} + Tax {inr(Math.round(finalTotal*0.18))}</div>
                   </div>
+                  <div style={{fontSize:30,fontWeight:800,color:"white",fontFamily:"'Playfair Display',serif"}}>{inr(Math.round(finalTotal*1.18))}</div>
                 </div>
               </div>
 
-              {/* T&C checkboxes */}
-              <div style={{ marginBottom:24 }}>
-                <div style={{ fontSize:14, fontWeight:700, color:S.navy, marginBottom:12 }}>Please confirm</div>
-                {[
-                  [consentTerms, setConsentTerms, "I have read and accept the ", "Terms & Conditions", "terms" as const],
-                  [consentRefund, setConsentRefund, "I have read and accept the ", "Refund Policy", "refund" as const],
-                  [consentCancel, setConsentCancel, "I have read and accept the ", "Cancellation Policy", "cancel" as const],
-                ].map(([val, setter, pre, linkText, key]: any) => (
-                  <div key={key} style={{ display:"flex", alignItems:"flex-start", gap:10, marginBottom:12, padding:"12px 14px", background:val?S.greenL:S.bg, borderRadius:8, border:`1px solid ${val?S.green:S.border}` }}>
-                    <input type="checkbox" checked={val} onChange={e => setter(e.target.checked)} style={{ marginTop:2, flexShrink:0 }} />
-                    <span style={{ fontSize:13, color:S.navy }}>
-                      {pre}
-                      <button onClick={() => setShowTnC(key)} style={{ color:S.blue, fontWeight:700, background:"none", border:"none", cursor:"pointer", fontSize:13, fontFamily:"'Nunito',sans-serif", padding:0, textDecoration:"underline" }}>
+              {/* T&C */}
+              <div style={{marginBottom:28}}>
+                <div style={{fontSize:14,fontWeight:700,color:"#0f172a",marginBottom:12}}>Please confirm to proceed</div>
+                {([
+                  [consentTerms,setConsentTerms,"I accept the","Terms & Conditions","terms" as const,"#6366f1"],
+                  [consentRefund,setConsentRefund,"I accept the","Refund Policy","refund" as const,"#10b981"],
+                  [consentCancel,setConsentCancel,"I accept the","Cancellation Policy","cancel" as const,"#f59e0b"],
+                ] as [boolean, React.Dispatch<React.SetStateAction<boolean>>, string, string, "terms"|"refund"|"cancel", string][]).map(([val,setter,pre,linkText,key,ac])=>(
+                  <div key={key}
+                    onClick={()=>setter(!val)}
+                    style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",background:val?`linear-gradient(135deg,${ac}10,${ac}06)`:"rgba(248,250,252,0.8)",borderRadius:12,marginBottom:8,border:`2px solid ${val?ac+"60":"rgba(148,163,184,0.2)"}`,cursor:"pointer",transition:"all 0.2s"}}>
+                    <div style={{width:22,height:22,borderRadius:6,border:`2px solid ${val?ac:"rgba(148,163,184,0.4)"}`,background:val?`linear-gradient(135deg,${ac},${ac}cc)`:"white",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,transition:"all 0.2s"}}>
+                      {val&&<span style={{color:"white",fontSize:12,fontWeight:800}}>✓</span>}
+                    </div>
+                    <span style={{fontSize:13,color:"#374151"}} onClick={e=>e.stopPropagation()}>
+                      {pre}{" "}
+                      <button onClick={e=>{e.stopPropagation();setShowTnC(key);}}
+                        style={{color:ac,fontWeight:700,background:"none",border:"none",cursor:"pointer",fontSize:13,fontFamily:"'Sora',sans-serif",padding:0,textDecoration:"underline"}}>
                         {linkText}
                       </button>
                     </span>
@@ -1058,62 +1058,46 @@ export function CustomerPlanPage() {
                 ))}
               </div>
 
-              {/* T&C Modal */}
-              {showTnC && (
-                <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.5)", zIndex:9999, display:"flex", alignItems:"center", justifyContent:"center", padding:20 }}
-                  onClick={() => setShowTnC(null)}>
-                  <div style={{ background:S.white, borderRadius:16, padding:28, maxWidth:520, width:"100%", maxHeight:"80vh", overflow:"auto" }}
-                    onClick={e => e.stopPropagation()}>
-                    <h3 style={{ marginTop:0, color:S.navy }}>{showTnC==="terms"?"Terms & Conditions":showTnC==="refund"?"Refund Policy":"Cancellation Policy"}</h3>
-                    <p style={{ color:S.gray, fontSize:13, lineHeight:1.6 }}>
-                      {showTnC==="terms" && "By subscribing to 249 Carwashing services, you agree to our service standards, data usage, and payment terms. Service subject to availability in your area."}
-                      {showTnC==="refund" && "Refunds are processed within 7 working days for cancelled subscriptions. Pro-rated refunds apply based on services rendered."}
-                      {showTnC==="cancel" && "You may cancel your subscription with 7 days' notice. No cancellation fee for month-to-month plans. Lock-in plans may have different terms."}
-                    </p>
-                    <button onClick={() => setShowTnC(null)}
-                      style={{ padding:"10px 24px", background:S.navy, color:S.white, border:"none", borderRadius:50, fontWeight:700, cursor:"pointer", fontFamily:"'Nunito',sans-serif" }}>
-                      Close
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                <Btn label="← Back" onClick={() => goTo(5)} secondary />
-                <button onClick={handleSubmit} disabled={!step6Ok || isProcessing}
-                  style={{ padding:"14px 40px", background:(!step6Ok||isProcessing)?S.gray:"linear-gradient(135deg, #1B6FD8, #0B4DA4)", color:S.white, border:"none", borderRadius:50, fontWeight:800, fontSize:16, cursor:(!step6Ok||isProcessing)?"not-allowed":"pointer", fontFamily:"'Nunito',sans-serif", boxShadow:(!step6Ok||isProcessing)?"none":"0 6px 20px rgba(27,111,216,0.4)", transition:"all 0.2s", display:"flex", alignItems:"center", gap:10 }}>
-                  {isProcessing ? (
-                    <><div style={{ width:16, height:16, border:"2px solid rgba(255,255,255,0.4)", borderTopColor:S.white, borderRadius:"50%", animation:"spin 0.8s linear infinite" }} /> Processing…</>
-                  ) : (
-                    <>🔒 Pay {inr(Math.round(finalTotal * 1.18))} Securely</>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                <button className="cpp-btn-ghost" onClick={()=>goTo(5)}>← Back</button>
+                <button
+                  onClick={handleSubmit}
+                  disabled={!step6Ok||isProcessing}
+                  style={{padding:"16px 44px",borderRadius:50,border:"none",cursor:(!step6Ok||isProcessing)?"not-allowed":"pointer",fontFamily:"'Sora',sans-serif",fontWeight:800,fontSize:16,background:(!step6Ok||isProcessing)?"#cbd5e1":"linear-gradient(135deg,#6366f1,#8b5cf6)",color:"white",boxShadow:(!step6Ok||isProcessing)?"none":"0 8px 24px rgba(99,102,241,0.45)",transition:"all 0.2s",display:"flex",alignItems:"center",gap:10}}>
+                  {isProcessing?(
+                    <><div style={{width:18,height:18,border:"2px solid rgba(255,255,255,0.35)",borderTopColor:"white",borderRadius:"50%",animation:"spin 0.7s linear infinite"}} /> Processing…</>
+                  ):(
+                    <>🔒 Pay {inr(Math.round(finalTotal*1.18))} Securely</>
                   )}
                 </button>
               </div>
-
-              <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+              <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
             </div>
           )}
         </div>
 
-        {/* ── RIGHT PANEL: Live Cost ───────────────────────────────────────────── */}
+        {/* Right: Cost panel */}
         <div>
-          <CostPanel
-            step={step} activeCat={activeCat} vehicleCategories={cfg.vehicleCategories}
-            selectedPlan={selectedPlan} planMode={planMode} selectedPack={selectedPack}
-            planPrice={planPrice} packPrice={packPrice} addons={addons} addonTotal={addonTotal}
-            total={total} commitment={commitment} commitments={cfg.commitments}
-            cfg={cfg} vehicleCat={vehicleCat} basePrice={basePrice}
-          />
+          <CostPanel step={step} activeCat={activeCat} vehicleCategories={cfg.vehicleCategories} selectedPlan={selectedPlan} planMode={planMode} selectedPack={selectedPack} planPrice={planPrice} packPrice={packPrice} addons={addons} addonTotal={addonTotal} total={total} commitment={commitment} commitments={cfg.commitments} cfg={cfg} vehicleCat={vehicleCat} basePrice={basePrice} />
         </div>
       </div>
 
-      {/* Mobile: cost summary bar at bottom (shows when content selected) */}
-      <style>{`
-        @media (max-width: 768px) {
-          .grid-cols-buy { grid-template-columns: 1fr !important; }
-          .cost-panel-sticky { display: none !important; }
-        }
-      `}</style>
+      {/* T&C Modal */}
+      {showTnC && (
+        <div style={{position:"fixed",inset:0,background:"rgba(15,23,42,0.7)",backdropFilter:"blur(6px)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={()=>setShowTnC(null)}>
+          <div className="cpp-modal-enter" style={{background:"white",borderRadius:24,padding:32,maxWidth:500,width:"100%",maxHeight:"75vh",overflow:"auto",boxShadow:"0 40px 80px rgba(0,0,0,0.3)"}} onClick={e=>e.stopPropagation()}>
+            <h3 style={{marginTop:0,color:"#0f172a",fontFamily:"'Playfair Display',serif",fontSize:22}}>
+              {showTnC==="terms"?"📋 Terms & Conditions":showTnC==="refund"?"💰 Refund Policy":"❌ Cancellation Policy"}
+            </h3>
+            <p style={{color:"#64748b",fontSize:14,lineHeight:1.7}}>
+              {showTnC==="terms"&&"By subscribing to 249 Carwashing services, you agree to our service standards, usage policies, and payment terms. Services are subject to availability in your area. We reserve the right to reschedule in case of weather or operational constraints."}
+              {showTnC==="refund"&&"Refunds are processed within 7 working days for cancelled subscriptions. Pro-rated refunds apply based on services already rendered. No refunds after 30 days from purchase. Add-ons are non-refundable once the visit has occurred."}
+              {showTnC==="cancel"&&"You may cancel your subscription with 7 days' written notice via WhatsApp or email. No cancellation fee applies to month-to-month plans. Lock-in plans (3, 6, 12 months) may have different terms as specified at the time of purchase."}
+            </p>
+            <button onClick={()=>setShowTnC(null)} className="cpp-btn-primary" style={{marginTop:8}}>Got it, close</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
