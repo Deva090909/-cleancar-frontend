@@ -202,7 +202,7 @@ const SalesManagerApp = lazy(() => import("./components/sm/SalesManagerApp").the
 const TeleSalesExecutiveApp = lazy(() => import("./components/tse/TeleSalesExecutiveApp").then(m => ({default: m.TeleSalesExecutiveApp || m.default})));
 const TSEDiagnostics = lazy(() => import("./components/tse/TSEDiagnostics").then(m => ({default: m.TSEDiagnostics || m.default})));
 const CustomerCareExecutiveApp = lazy(() => import("./components/cce/CustomerCareExecutiveApp").then(m => ({default: m.CustomerCareExecutiveApp || m.default})));
-const TestBTLService = lazy(() => import("./test-btl-service"));
+const TestBTLService = lazy(() => import("./test-btl-service").catch(() => ({ default: () => null })));
 const SubscriptionApp = lazy(() => import("./components/subscription/SubscriptionApp").then(m => ({default: m.SubscriptionApp || m.default})));
 const PlanSelectionScreen = lazy(() => import("./components/subscription/PlanSelectionScreen").then(m => ({default: m.PlanSelectionScreen || m.default})));
 const CustomerPlanPage = lazy(() => import("./components/subscription/CustomerPlanPage").then(m => ({default: m.CustomerPlanPage || m.default})));
