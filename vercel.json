@@ -15,13 +15,13 @@
       ]
     },
     {
-      "source": "/assets/(.*\\.js)",
+      "source": "/assets/(.*).js",
       "headers": [
         { "key": "Cache-Control", "value": "no-cache, must-revalidate" }
       ]
     },
     {
-      "source": "/assets/(.*\\.(css|woff2|png|svg|ico))",
+      "source": "/assets/(.*.(css|woff2|png|svg|ico))",
       "headers": [
         { "key": "Cache-Control", "value": "public, max-age=86400" }
       ]
