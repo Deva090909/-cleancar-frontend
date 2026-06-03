@@ -437,16 +437,7 @@ export function TeleSalesExecutiveApp() {
           />
         )}
 
-        { currentScreen === "INCENTIVE_TRACKER" && (() => {
-              // Read logged-in TSE id from session
-              let tseId = "EDB-TSE-SUR1";
-              let tseName = "TSE";
-              try {
-                const s = localStorage.getItem("cleancar_session");
-                if (s) { const p = JSON.parse(s); tseId = p.employeeId || p.id || tseId; tseName = p.name || p.fullName || tseName; }
-              } catch(_) {}
-              return <TSEIncentiveTracker tseId={tseId} name={tseName} />;
-            })() }
+        {currentScreen === "INCENTIVE_TRACKER" && <TSEIncentiveTracker />}
       </div>
     </div>
   );

@@ -4,18 +4,9 @@ import { SubscriptionIncentiveTracker } from "../incentives/SubscriptionIncentiv
 
 /**
  * TSEIncentiveTracker — tab wrapper: Overview | Payout Ledger
- * tseId is read from session if not passed as prop
  */
-function getSessionTseId(): string {
-  try {
-    const s = localStorage.getItem("cleancar_session");
-    if (s) { const p = JSON.parse(s); return p.employeeId || p.id || "EDB-TSE-SUR1"; }
-  } catch(_) {}
-  return "EDB-TSE-SUR1";
-}
-
 export function TSEIncentiveTracker({ tseId, name }: { tseId?: string; name?: string }) {
-  const id = tseId || getSessionTseId();
+  const id  = tseId || "EDB-TSE-SUR1";
   const [tab, setTab] = useState<"overview" | "ledger">("overview");
 
   return (
